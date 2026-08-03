@@ -65,7 +65,6 @@ const userAnswerSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-userAnswerSchema.index({ mockidRef: 1 });
 userAnswerSchema.index({ userEmail: 1 });
 
 module.exports = mongoose.model('UserAnswer', userAnswerSchema);

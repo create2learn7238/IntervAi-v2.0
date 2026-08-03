@@ -51,7 +51,4 @@ const interviewSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-interviewSchema.index({ createdby: 1 });
-interviewSchema.index({ mockid: 1 });
-
 module.exports = mongoose.model('Interview', interviewSchema);
