@@ -54,18 +54,25 @@ const sendTokenResponse = async (user, statusCode, res) => {
 
 // POST /api/auth/register
 const register = catchAsync(async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
     return next(new AppError('Name, email, and password are required', 400));
   }
 
-  const existing = await User.findOne({ email });
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) {
-    return next(new AppError('User already exists with this email', 400));
+    return next(new AppError('User already exists with this email. Please sign in.', 400));
   }
 
-  const user = await User.create({ name, email, password, role: 'student' });
+  const user = await User.create({ 
+    name: name.trim(), 
+    email: normalizedEmail, 
+    password, 
+    role: role || 'student' 
+  });
 
   sendTokenResponse(user, 201, res);
 });
