@@ -88,7 +88,24 @@ const login = catchAsync(async (req, res, next) => {
   const normalizedEmail = email.trim().toLowerCase();
   let user = await User.findOne({ email: normalizedEmail }).select('+password');
 
-  // Strict Database Check: If user is not found in DB, prompt signup
+  // Auto-seed Demo User if logging in with demo account
+  if (!user && normalizedEmail === 'demo@interai.app') {
+    user = await User.create({
+      name: 'Demo Candidate',
+      email: 'demo@interai.app',
+      password: 'password123',
+      role: 'student',
+      college: 'Demo University',
+      branch: 'Computer Science',
+      graduationYear: '2026',
+      profileCompleted: true,
+      isRoleLocked: true,
+      placementStatus: 'Looking for Jobs'
+    });
+    return sendTokenResponse(user, 200, res);
+  }
+
+  // Database Check: If user is not found in DB, prompt signup
   if (!user) {
     return res.status(404).json({
       error: 'Account not found in database. Please sign up to create an account.',
