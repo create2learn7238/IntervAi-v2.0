@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Build & Output directories
+dist/
+dist-ssr/
+build/
+
+# Temporary / sensitive data files
+Atlas.txt
+atlas-credentials.env
+code_dump.txt
+*.log
+
+# Editor & OS metadata
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo

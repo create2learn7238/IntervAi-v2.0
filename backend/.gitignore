@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+
+# Uploads & User Media (keep directory structure with .gitkeep)
+uploads/resumes/*
+uploads/videos/*
+!uploads/resumes/.gitkeep
+!uploads/videos/.gitkeep
+
+# Logs
+logs/
+*.log
