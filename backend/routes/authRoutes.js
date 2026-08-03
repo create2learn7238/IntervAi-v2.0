@@ -4,13 +4,13 @@ const router = express.Router();
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs for auth routes
+  max: 100, // Allow 100 requests per 15 minutes for smooth user registration & login
   message: { success: false, message: 'Too many authentication attempts from this IP, please try again after 15 minutes.' }
 });
 
 const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 requests per windowMs for email endpoints
+  max: 20, // Allow 20 email requests per hour
   message: { success: false, message: 'Too many email requests from this IP, please try again after an hour.' }
 });
 const { register, login, getMe, updateProfile, verifyRole, forgotPassword, resetPassword, refresh, logout } = require('../controllers/authController');
