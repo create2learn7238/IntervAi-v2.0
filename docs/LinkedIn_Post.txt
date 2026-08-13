@@ -1,0 +1,40 @@
+🤖 We just shipped IntervAI v2.0 in MERN and I genuinely cannot believe it works! 💀
+
+"2,523 modules transformed, 0 errors, 100% vibes. Pray for us." 🚀
+
+---
+
+🎯 What is IntervAI v2.0?
+
+An AI-powered mock interview & proctoring platform built for students and recruiters to practice placement drives without the interview panic.
+
+No generic 2012 StackOverflow questions. Just real AI feedback & zero cheat tolerance.
+
+🔗 Try it here → [PROJECT LINK HERE]
+
+---
+
+🔥 KEY FEATURES:
+
+✅ Unpredictable AI Questions — Scenario questions powered by Google Gemini Flash
+✅ Speech-to-Text Studio — Real-time voice answers, STAR method feedback & pace metrics
+✅ Savage Anti-Cheat Engine — Tracks tab switches, mic mutes & head camera loss
+✅ Recruiter Talent Portal — Instant candidate screening with HIRE / CONSIDER badges
+✅ Readiness Certificates — Verifiable PDF certificates for top performers
+✅ 1-Click Demo Accounts — Explore as Student, Recruiter, or Admin in 1 click
+
+---
+
+🛠️ TECH STACK:
+React 19 | Vite | TailwindCSS | Node.js | Express | MongoDB Atlas | Google Gemini AI
+
+Git Commit History:
+"added feature" -> "broke feature" -> "why did Gemini roast me" -> "hotfix_v2_FINAL" -> "deployed, do not touch 🙏"
+
+Shoutout to the team: @Friend1 (Backend Menace) & @Friend2 (MacBook Frontend Legend) 🫡
+
+Drop a like & share with anyone preparing for campus placement drives! 🙌
+
+🔗 Link → [PROJECT LINK HERE]
+
+#MERNStack #ReactJS #GoogleGemini #WebDevelopment #BuildInPublic #LJIETAhmedabad #Sem4Shipped
