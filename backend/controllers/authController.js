@@ -94,23 +94,39 @@ const login = catchAsync(async (req, res, next) => {
   const normalizedEmail = email.trim().toLowerCase();
   let user = await User.findOne({ email: normalizedEmail }).select('+password');
 
-  // Handle Demo Login: bypass password checks and auto-seed if necessary
-  if (normalizedEmail === 'demo@interai.app') {
+  // Handle 1-Click Demo Logins (Student, Recruiter, Admin)
+  const isDemoAccount = ['demo@interai.app', 'recruiter@techcorp.com', 'admin@intervai.app'].includes(normalizedEmail);
+  if (isDemoAccount) {
     if (!user) {
+      // Auto-trigger database seeding if DB is empty or demo accounts don't exist yet
+      try {
+        const { runSeed } = require('../services/seedService');
+        await runSeed();
+        user = await User.findOne({ email: normalizedEmail }).select('+password');
+      } catch (e) {
+        console.warn('Auto-seed during demo login error:', e.message);
+      }
+    }
+    
+    // If user still not found, auto-create role-specific demo user dynamically
+    if (!user) {
+      const demoRole = normalizedEmail.includes('admin') ? 'admin' : (normalizedEmail.includes('recruiter') ? 'recruiter' : 'student');
+      const demoName = normalizedEmail.includes('admin') ? 'System Administrator' : (normalizedEmail.includes('recruiter') ? 'Samantha Vance' : 'Demo Candidate');
       user = await User.create({
-        name: 'Demo Candidate',
-        email: 'demo@interai.app',
+        name: demoName,
+        email: normalizedEmail,
         password: 'password123',
-        role: 'student',
-        college: 'Demo University',
+        role: demoRole,
+        college: 'IntervAI Hub',
         branch: 'Computer Science',
         graduationYear: '2026',
         profileCompleted: true,
-        isRoleLocked: true,
+        isUserTypeLocked: true,
         placementStatus: 'Looking for Jobs'
       });
-    } else if (user.isSuspended) {
-      // Un-suspend the demo user if it was suspended
+    }
+
+    if (user.isSuspended) {
       user.isSuspended = false;
       await user.save();
     }
