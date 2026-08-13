@@ -13,7 +13,7 @@ const seedAdmin = async () => {
 
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb+srv://learn7238_db_user:Au38YeIjTN8D9kDN@cluster0.ul2jk4n.mongodb.net/intervAi?retryWrites=true&w=majority');
+    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/intervai');
     console.log('✅ MongoDB connected');
 
     const normalizedEmail = email.trim().toLowerCase();

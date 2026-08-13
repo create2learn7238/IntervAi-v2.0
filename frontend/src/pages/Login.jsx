@@ -59,7 +59,7 @@ export default function Login() {
 
     try {
       const { data } = await loginUser({ email: demoEmail, password: demoPw });
-      handleLoginSuccess({ _id: data._id, name: data.name, email: data.email, role: data.role || 'student' }, data.token);
+      handleLoginSuccess(data, data.token);
     } catch (err) {
       toast.error(err.response?.data?.message || err.response?.data?.error || `Demo sign in for ${roleName} failed.`);
     } finally {

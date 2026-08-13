@@ -48,6 +48,10 @@ const sendTokenResponse = async (user, statusCode, res) => {
     isRoleLocked: user.isUserTypeLocked || user.isRoleLocked || false,
     targetRole: user.targetRole || '',
     skills: user.skills || [],
+    bio: user.bio || '',
+    phone: user.phone || '',
+    linkedIn: user.linkedIn || '',
+    github: user.github || '',
     placementStatus: user.placementStatus || 'Looking for Jobs',
     preferences: user.preferences || { aiPersona: 'Strict Recruiter', speechRate: '0.9x', autoRecord: true },
     token // Send token for legacy frontend support during transition

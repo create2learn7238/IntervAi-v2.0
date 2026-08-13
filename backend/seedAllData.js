@@ -12,14 +12,10 @@ const CandidateAiProfile = require('./models/CandidateAiProfile');
 const SiteFeedback = require('./models/SiteFeedback');
 const AIRequestLog = require('./models/AIRequestLog');
 
-const ATLAS_URI = 'mongodb+srv://learn7238_db_user:Au38YeIjTN8D9kDN@cluster0.ul2jk4n.mongodb.net/intervAi?retryWrites=true&w=majority';
-
 async function seedData() {
   const connectionUris = [
     process.env.MONGODB_URI,
     process.env.MONGO_URI,
-    ATLAS_URI,
-    'mongodb://learn7238_db_user:Au38YeIjTN8D9kDN@cluster0-shard-00-00.ul2jk4n.mongodb.net:27017,cluster0-shard-00-01.ul2jk4n.mongodb.net:27017,cluster0-shard-00-02.ul2jk4n.mongodb.net:27017/intervAi?ssl=true&replicaSet=atlas-ul2jk4n-shard-0&authSource=admin&retryWrites=true&w=majority',
     'mongodb://127.0.0.1:27017/intervai'
   ].filter(Boolean);
 
