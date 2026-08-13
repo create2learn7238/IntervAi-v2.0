@@ -94,6 +94,22 @@ app.use('/api/v1/site-feedback', siteFeedbackRoutes);
 // Health check
 const mongoose = require('mongoose');
 
+// Automated Seed Endpoint for Online Atlas Database
+const { runSeed } = require('./services/seedService');
+app.all('/api/v1/seed-database', async (req, res) => {
+  try {
+    const result = await runSeed();
+    res.status(200).json({
+      success: true,
+      message: 'Database successfully seeded on MongoDB Atlas!',
+      data: result
+    });
+  } catch (err) {
+    console.error('Seed Endpoint Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Improved Health Check with DB Status
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ 
