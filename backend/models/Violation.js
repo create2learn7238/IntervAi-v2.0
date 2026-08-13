@@ -13,7 +13,7 @@ const violationSchema = new mongoose.Schema({
   violationType: {
     type: String,
     required: true,
-    enum: ['FULLSCREEN_EXIT', 'TAB_SWITCH', 'WINDOW_HIDDEN', 'CAMERA_OFF', 'MIC_OFF', 'BROWSER_RESIZE', 'UNKNOWN'],
+    enum: ['FULLSCREEN_EXIT', 'TAB_SWITCH', 'WINDOW_HIDDEN', 'CAMERA_OFF', 'MIC_OFF', 'BROWSER_RESIZE', 'LOOKING_AWAY', 'NO_FACE_DETECTED', 'MULTIPLE_FACES', 'TRIVIAL_ANSWER', 'COPY_PASTE', 'UNKNOWN'],
   },
   description: {
     type: String,
