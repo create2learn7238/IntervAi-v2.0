@@ -22,7 +22,7 @@ async function seedData() {
   let connected = false;
   for (const uri of connectionUris) {
     try {
-      console.log(`🔌 Attempting connection to: ${uri.includes('127.0.0.1') ? 'Local MongoDB' : 'Atlas Cluster'}`);
+      console.log(`🔌 Connecting to MongoDB...`);
       await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
       console.log(`✅ Connected successfully to: ${uri.includes('127.0.0.1') ? 'Local MongoDB' : 'Atlas Cluster'}`);
       connected = true;
@@ -33,13 +33,12 @@ async function seedData() {
   }
 
   if (!connected) {
-    console.error('❌ Could not connect to MongoDB Atlas. Please check network connection or MongoDB Atlas access IP settings.');
+    console.error('❌ Could not connect to any MongoDB instance. Please check environment variables.');
     process.exit(1);
   }
 
   try {
-    // 1. Clear existing collections
-    console.log('🧹 Cleaning up database collections...');
+    console.log('🧹 Cleaning existing collections...');
     await Promise.all([
       User.deleteMany({}),
       Interview.deleteMany({}),
@@ -52,7 +51,7 @@ async function seedData() {
       AIRequestLog.deleteMany({})
     ]);
 
-    // 2. Seed Admin & Recruiters
+    // 1. System Admin & Recruiters
     console.log('👤 Seeding System Admin & Recruiters...');
     const adminUser = await User.create({
       name: 'System Administrator',
@@ -98,9 +97,8 @@ async function seedData() {
       }
     ]);
 
-    // 3. Seed Exactly 25 Diverse Student Candidates
-    console.log('🎓 Seeding 25 Full Student Profiles...');
-
+    // 2. Seed 25 Full Student Candidates
+    console.log('🎓 Seeding 25 Full Student Candidates...');
     const candidateDataList = [
       { name: 'Demo Candidate', email: 'demo@interai.app', college: 'Stanford University', branch: 'Computer Science', year: '2026', role: 'Full Stack MERN Developer', skills: ['React', 'Node.js', 'Express', 'MongoDB', 'JavaScript', 'TypeScript', 'TailwindCSS'], status: 'Looking for Jobs' },
       { name: 'Priya Sharma', email: 'priya.sharma@iet.edu', college: 'LJ Institute of Engineering & Tech', branch: 'Information Technology', year: '2026', role: 'Frontend React Engineer', skills: ['React', 'JavaScript', 'Redux Toolkit', 'CSS3', 'HTML5', 'Next.js', 'REST APIs'], status: 'Interviewing' },
@@ -131,7 +129,7 @@ async function seedData() {
 
     const studentUsers = [];
     for (const c of candidateDataList) {
-      const user = await User.create({
+      const u = await User.create({
         name: c.name,
         email: c.email,
         password: 'password123',
@@ -143,149 +141,243 @@ async function seedData() {
         isUserTypeLocked: true,
         targetRole: c.role,
         skills: c.skills,
-        bio: `Enthusiastic ${c.role} candidate with hands-on experience in ${c.skills.slice(0, 3).join(', ')}. Looking to contribute to high-impact technical teams.`,
+        bio: `Enthusiastic ${c.role} candidate with hands-on experience in ${c.skills.slice(0, 3).join(', ')}. Passionate about building scalable applications.`,
         phone: `+1 ${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`,
         linkedIn: `https://linkedin.com/in/${c.name.toLowerCase().replace(/[^a-z]/g, '-')}`,
         github: `https://github.com/${c.name.toLowerCase().replace(/[^a-z]/g, '-')}`,
         placementStatus: c.status
       });
-      studentUsers.push(user);
+      studentUsers.push(u);
     }
 
-    console.log(`✅ Created 25 Student Candidates successfully!`);
+    console.log(`✅ Created 25 Full Student Profiles.`);
 
-    // 4. Seed Rich Mock Interviews for Selected Candidates
-    console.log('🎙️ Seeding Mock Interviews & AI Evaluations...');
+    // 3. Seed 3 Full Sessions with Perfect Evaluations for Demo Candidate (demo@interai.app)
+    console.log('🎙️ Seeding 3 Full Perfect Sessions for Demo Candidate...');
 
-    const sampleInterviewsData = [
+    const demoCandidate = studentUsers[0];
+
+    const demoSessions = [
       {
-        candidate: studentUsers[0], // Demo Candidate
-        role: 'Full Stack MERN Developer',
-        desc: 'Comprehensive MERN technical evaluation covering event loops, server components, and NoSQL query injection security.',
-        difficulty: 'Expert',
-        persona: 'Strict Recruiter',
-        score: 88,
-        trust: 95,
-        statusLevel: 'Excellent',
-        questions: [
-          { q: "Explain event loop architecture in Node.js and non-blocking I/O operations.", a: "Node.js uses a single-threaded event loop via libuv. Async operations like network and file system I/O are offloaded to worker threads.", rating: "9", just: "Accurate explanation of libuv threadpool and non-blocking I/O mechanics." },
-          { q: "How do React 19 Server Components differ from standard Client Components?", a: "Server Components execute exclusively on the server, sending zero JavaScript bundle overhead to the browser client.", rating: "8", just: "Correctly identified zero-bundle-size benefit of Server Components." },
-          { q: "What strategies prevent NoSQL query injection in MongoDB Mongoose queries?", a: "Using express-mongo-sanitize middleware, avoiding raw $where strings, and enforcing strict Zod input validation.", rating: "9", just: "Excellent production security awareness." }
-        ]
-      },
-      {
-        candidate: studentUsers[1], // Priya Sharma
-        role: 'Frontend React Engineer',
-        desc: 'Evaluation on React 19 Fiber reconciliation, hooks, custom state management, and CSS performance.',
-        difficulty: 'Intermediate',
-        persona: 'Strict Recruiter',
-        score: 82,
-        trust: 85,
-        statusLevel: 'Good',
-        questions: [
-          { q: "Explain React hook rules and why hooks cannot be called conditionally.", a: "Hooks rely on call order array indices inside Fiber nodes; dynamic conditions disrupt internal index mapping.", rating: "8", just: "Solid understanding of internal Fiber node call ordering." },
-          { q: "How do you optimize render performance in large React component trees?", a: "Utilizing React.memo, useCallback to memoize event handlers, useMemo for expensive math, and code-splitting with React.lazy.", rating: "8", just: "Proper identification of memoization techniques and dynamic imports." }
-        ]
-      },
-      {
-        candidate: studentUsers[2], // Alex Chen
-        role: 'Backend Systems Architect',
-        desc: 'Advanced system architecture interview covering Saga patterns, distributed consistency, and Redis caching.',
-        difficulty: 'Expert',
-        persona: 'Strict Recruiter',
-        score: 98,
-        trust: 100,
-        statusLevel: 'Excellent',
-        questions: [
-          { q: "How do you maintain data consistency across distributed microservices?", a: "We use the Saga pattern with event-driven architecture and Kafka to manage eventual consistency across microservices.", rating: "10", just: "Flawless distributed transaction system design explanation." },
-          { q: "Explain cache stampede prevention strategies in high-traffic Redis deployments.", a: "Using distributed locks (Redlock algorithm), probabilistic early expiration (XFetch), or background cache warmers.", rating: "9", just: "Demonstrated senior-level distributed caching expertise." }
-        ]
-      },
-      {
-        candidate: studentUsers[3], // Sarah Jenkins
-        role: 'Data Scientist & ML Specialist',
-        desc: 'Deep learning model optimization, PyTorch execution graphs, and feature engineering pipelines.',
-        difficulty: 'Expert',
-        persona: 'Strict Recruiter',
-        score: 75,
-        trust: 65,
-        statusLevel: 'Warning',
-        questions: [
-          { q: "How do you address overfitting in deep neural networks?", a: "Applying L1/L2 weight regularization, Dropout layers, Early Stopping, Data Augmentation, and Batch Normalization.", rating: "8", just: "Good coverage of neural network regularization techniques." }
-        ]
-      },
-      {
-        candidate: studentUsers[4], // Vikram Patel
-        role: 'DevOps & Cloud Engineer',
-        desc: 'Terraform IaC, Kubernetes ingress controllers, AWS IAM roles, and CI/CD pipelines.',
-        difficulty: 'Expert',
-        persona: 'Strict Recruiter',
-        score: 92,
-        trust: 90,
-        statusLevel: 'Excellent',
-        questions: [
-          { q: "Explain Kubernetes Pod lifecycle and Blue/Green deployment strategies.", a: "Pods transition through Pending, Running, Succeeded/Failed. Blue/Green deploys traffic via service selector switches.", rating: "9", just: "Clear zero-downtime deployment strategy." }
-        ]
-      },
-      {
-        candidate: studentUsers[6], // Rohan Mehta
-        role: 'Full Stack MERN Developer',
-        desc: 'MERN stack fundamental assessment covering Express middleware, JWT auth, and React state hooks.',
-        difficulty: 'Intermediate',
-        persona: 'Encouraging Coach',
-        score: 80,
-        trust: 95,
-        statusLevel: 'Excellent',
-        questions: [
-          { q: "What is the role of middleware in Express.js application pipelines?", a: "Middleware functions execute sequentially during the request-response cycle, allowing auth checks, logging, and body parsing.", rating: "8", just: "Accurate middleware description." }
-        ]
-      },
-      {
-        candidate: studentUsers[7], // Aarav Gupta
-        role: 'Backend Node.js Engineer',
-        desc: 'TypeScript integration with Node.js, Mongoose schemas, and Jest unit test suites.',
+        title: 'Full Stack MERN Developer Assessment',
+        desc: 'Advanced technical mock evaluation covering Node.js event loop, React 19 Server Components, MongoDB indexing, and NoSQL query injection security.',
         difficulty: 'Expert',
         persona: 'Strict Recruiter',
         score: 90,
         trust: 95,
-        statusLevel: 'Excellent',
         questions: [
-          { q: "How does TypeScript improve Node.js enterprise backend reliability?", a: "Static type checking catches null dereferences and signature mismatches during compile time before deployment.", rating: "9", just: "Clear type safety benefits outlined." }
+          {
+            q: "Explain event loop architecture in Node.js and non-blocking I/O operations.",
+            a: "Node.js runs single-threaded using libuv. Asynchronous operations like network requests, database calls, and file system tasks are offloaded to worker threads via libuv.",
+            rating: "9",
+            just: "Demonstrated accurate technical knowledge of libuv, event loop phases, and single-threaded async execution.",
+            fb: "Flawless explanation! You clearly understand how non-blocking I/O keeps the main thread unblocked."
+          },
+          {
+            q: "How do React 19 Server Components differ from standard Client Components?",
+            a: "Server Components render exclusively on the server before transmitting zero JavaScript bundle to the browser client, whereas Client Components handle client-side interactivity like useState.",
+            rating: "9",
+            just: "Clear differentiation of bundle footprint reduction and client-side state handling.",
+            fb: "Spot on! Great understanding of modern React 19 server rendering patterns."
+          },
+          {
+            q: "What strategies prevent NoSQL query injection in MongoDB Mongoose queries?",
+            a: "Using express-mongo-sanitize middleware to strip $ operators, avoiding raw $where strings, and strictly validating input types using Zod schemas.",
+            rating: "9",
+            just: "Comprehensive production security awareness.",
+            fb: "Excellent! Expressing input sanitization and schema validation shows high security consciousness."
+          },
+          {
+            q: "How would you optimize MongoDB aggregations for millions of records?",
+            a: "Place $match and $sort stages at the top of the pipeline to leverage compound indexes, project only needed fields, and use $facet for pagination.",
+            rating: "9",
+            just: "Clear index leverage strategy and aggregation pipeline optimization.",
+            fb: "Great performance optimization strategy!"
+          }
         ]
       },
       {
-        candidate: studentUsers[8], // Ananya Verma
-        role: 'UI/UX Frontend Developer',
-        desc: 'TailwindCSS design tokens, Framer Motion transitions, and accessible HTML semantics.',
-        difficulty: 'Intermediate',
+        title: 'Frontend React & Next.js Architecture',
+        desc: 'Senior React interview evaluating Fiber reconciliation, custom hooks, Redux Toolkit, and web performance optimization.',
+        difficulty: 'Expert',
         persona: 'Encouraging Coach',
-        score: 85,
-        trust: 90,
-        statusLevel: 'Excellent',
+        score: 95,
+        trust: 100,
         questions: [
-          { q: "How do ARIA attributes improve web accessibility for screen readers?", a: "ARIA roles and states provide semantic metadata to assistive technologies when native HTML tags are insufficient.", rating: "9", just: "Strong web accessibility knowledge." }
+          {
+            q: "Explain React hook rules and why hooks cannot be called conditionally.",
+            a: "Hooks rely on internal call order array indices inside Fiber nodes. Dynamic conditional execution disrupts the internal call order mapping across re-renders.",
+            rating: "10",
+            just: "Flawless technical explanation of Fiber call order array tracking.",
+            fb: "Perfect! You know the exact internal Fiber node mechanics behind React Hook rules."
+          },
+          {
+            q: "How do you optimize render performance in complex React component trees?",
+            a: "Using React.memo to memoize components, useCallback for function props, useMemo for heavy calculations, and dynamic imports via React.lazy for code splitting.",
+            rating: "9",
+            just: "Comprehensive memoization and dynamic import performance strategy.",
+            fb: "Excellent performance techniques!"
+          },
+          {
+            q: "What is the difference between client-side routing and Next.js SSR App Router?",
+            a: "Client-side routing downloads full JS bundles and renders in browser, while Next.js App Router renders HTML per request on edge servers for instant FCP and optimal SEO.",
+            rating: "9",
+            just: "Accurate distinction between SPA client-side rendering and SSR edge streaming.",
+            fb: "Great grasp of modern SSR routing architectures!"
+          },
+          {
+            q: "How do you handle global state synchronization without prop-drilling?",
+            a: "Using Redux Toolkit slices or Zustand stores for global application state, and React Context API for localized UI theme/auth state.",
+            rating: "10",
+            just: "Clean architectural division between global domain state and contextual UI state.",
+            fb: "Very clean architectural approach!"
+          }
+        ]
+      },
+      {
+        title: 'Backend Systems Architecture & Microservices',
+        desc: 'Distributed systems design interview covering Saga orchestrators, Redis distributed caching, and JWT refresh token flows.',
+        difficulty: 'Expert',
+        persona: 'Strict Recruiter',
+        score: 92,
+        trust: 98,
+        questions: [
+          {
+            q: "How do you maintain data consistency across distributed microservices?",
+            a: "We implement the Saga pattern using event-driven architecture with Kafka/RabbitMQ to manage eventual consistency and compensating transactions.",
+            rating: "10",
+            just: "Expert system design explanation identifying Sagas, event brokers, and eventual consistency.",
+            fb: "Outstanding backend architecture response!"
+          },
+          {
+            q: "Explain cache stampede prevention strategies in Redis deployments.",
+            a: "Using distributed mutex locks (Redlock), probabilistic early expiration (XFetch algorithm), or background worker warmers.",
+            rating: "9",
+            just: "Demonstrated senior-level knowledge of distributed cache concurrency control.",
+            fb: "Very strong cache concurrency management!"
+          },
+          {
+            q: "How do you securely structure JWT token authentication with Refresh Tokens?",
+            a: "Issue short-lived access tokens stored in memory and 7-day refresh tokens stored in httpOnly, SameSite=Strict cookies with token rotation.",
+            rating: "9",
+            just: "Clear security strategy protecting against XSS and CSRF vulnerabilities.",
+            fb: "Spot on security implementation!"
+          },
+          {
+            q: "What is the role of database indexing and how do compound indexes work?",
+            a: "Indexes create B-Tree lookup structures. Compound indexes cover multi-field queries, following the Equality, Sort, Range (ESR) rule.",
+            rating: "9",
+            just: "Accurate B-Tree indexing and ESR query rule explanation.",
+            fb: "Solid database internals knowledge!"
+          }
         ]
       }
     ];
 
-    for (const item of sampleInterviewsData) {
+    for (const session of demoSessions) {
       const mockId = uuidv4();
       
-      // Create Interview
-      const interview = await Interview.create({
+      await Interview.create({
         mockid: mockId,
-        createdby: item.candidate.email,
+        createdby: demoCandidate.email,
+        jobposition: session.title,
+        jobdescription: session.desc,
+        jobexp: '2',
+        difficulty: session.difficulty,
+        aiPersona: session.persona,
+        status: 'Completed',
+        sessionVideoUrl: `/api/v1/media/sample-${mockId.substring(0, 6)}.webm`,
+        jsonmockresp: JSON.stringify(session.questions.map(q => ({ question: q.q, answer: q.a })))
+      });
+
+      for (const q of session.questions) {
+        await UserAnswer.create({
+          mockidRef: mockId,
+          question: q.q,
+          correctanswer: q.a,
+          useranswer: q.a,
+          rating: q.rating,
+          justification: q.just,
+          feedback: q.fb,
+          detailedFeedback: `${q.fb} Evaluation score: ${q.rating}/10. Clear technical depth and terminology.`,
+          confidenceScore: Number(q.rating) * 10,
+          eyeContactScore: session.trust,
+          clarityScore: Number(q.rating) * 10,
+          paceScore: 88,
+          depthScore: Number(q.rating) * 10,
+          vocabularyScore: Number(q.rating) * 10,
+          fillerWordsCount: 1,
+          userEmail: demoCandidate.email,
+          cheatEvents: { copyPasteCount: 0, tabSwitchCount: 0, multipleFacesDetected: false, lookingAwayCount: 0, noFaceCount: 0 }
+        });
+      }
+
+      await TrustScore.create({
+        interviewId: mockId,
+        userEmail: demoCandidate.email,
+        score: session.trust,
+        status: 'Excellent'
+      });
+
+      await Certificate.create({
+        userId: demoCandidate._id,
+        interviewId: mockId,
+        candidateName: demoCandidate.name,
+        interviewTitle: session.title,
+        score: session.score,
+        status: 'Passed',
+        certificateId: `CERT-${uuidv4().substring(0, 8).toUpperCase()}`
+      });
+    }
+
+    // AI Profile for Demo Candidate
+    await CandidateAiProfile.create({
+      userId: demoCandidate._id,
+      summary: 'Demo Candidate shows exceptional technical depth across Full Stack MERN development, React 19 internals, and distributed microservices architecture. Communicates with top-tier confidence.',
+      strengths: ['Event Loop & Non-Blocking I/O', 'React 19 Fiber Reconciliation & Hooks', 'Microservices Saga Architecture & Security'],
+      weaknesses: ['Explore advanced APM & Prometheus metrics monitoring'],
+      recommendedRoles: ['Senior MERN Developer', 'Full Stack Architect', 'Lead Frontend Engineer'],
+      matchScore: 92,
+      lastUpdated: new Date()
+    });
+
+    // Seed additional sessions for Priya Sharma & Alex Chen
+    const priyaUser = studentUsers[1];
+    const alexUser = studentUsers[2];
+
+    const additionalSessions = [
+      {
+        user: priyaUser,
+        role: 'Frontend React Engineer',
+        desc: 'React state hooks and component lifecycle assessment',
+        score: 85,
+        trust: 90,
+        questions: [{ q: "Explain React hook rules.", a: "Hooks must be called at top level due to Fiber node call order index.", rating: "8", just: "Good understanding." }]
+      },
+      {
+        user: alexUser,
+        role: 'Backend Systems Architect',
+        desc: 'Distributed microservices and Saga transaction management',
+        score: 98,
+        trust: 100,
+        questions: [{ q: "How do you maintain consistency in microservices?", a: "Using Saga pattern with Kafka event bus.", rating: "10", just: "Flawless response." }]
+      }
+    ];
+
+    for (const item of additionalSessions) {
+      const mockId = uuidv4();
+      await Interview.create({
+        mockid: mockId,
+        createdby: item.user.email,
         jobposition: item.role,
         jobdescription: item.desc,
         jobexp: '2',
-        difficulty: item.difficulty,
-        aiPersona: item.persona,
+        difficulty: 'Expert',
+        aiPersona: 'Strict Recruiter',
         status: 'Completed',
-        sessionVideoUrl: `/api/v1/media/session-${mockId.substring(0, 6)}.webm`,
         jsonmockresp: JSON.stringify(item.questions.map(q => ({ question: q.q, answer: q.a })))
       });
 
-      // Create Answers
       for (const q of item.questions) {
         await UserAnswer.create({
           mockidRef: mockId,
@@ -294,96 +386,55 @@ async function seedData() {
           useranswer: q.a,
           rating: q.rating,
           justification: q.just,
-          feedback: `Solid response! Evaluation score: ${q.rating}/10.`,
-          detailedFeedback: `Candidate demonstrated relevant domain terminology. Score: ${q.rating}/10.`,
+          feedback: `Great response! Rated ${q.rating}/10`,
+          detailedFeedback: `Clear candidate response. Score: ${q.rating}/10`,
           confidenceScore: Number(q.rating) * 10,
           eyeContactScore: item.trust,
-          clarityScore: Number(q.rating) * 10,
+          clarityScore: 90,
           paceScore: 85,
           depthScore: Number(q.rating) * 10,
-          vocabularyScore: Number(q.rating) * 10,
-          fillerWordsCount: Math.floor(Math.random() * 3),
-          userEmail: item.candidate.email,
+          vocabularyScore: 90,
+          fillerWordsCount: 0,
+          userEmail: item.user.email,
           cheatEvents: { copyPasteCount: 0, tabSwitchCount: 0, multipleFacesDetected: false, lookingAwayCount: 0, noFaceCount: 0 }
         });
       }
 
-      // Create Trust Score
       await TrustScore.create({
         interviewId: mockId,
-        userEmail: item.candidate.email,
+        userEmail: item.user.email,
         score: item.trust,
-        status: item.statusLevel
+        status: 'Excellent'
       });
 
-      // Create Certificate if score > 80
-      if (item.score >= 80 && item.trust >= 80) {
-        await Certificate.create({
-          userId: item.candidate._id,
-          interviewId: mockId,
-          candidateName: item.candidate.name,
-          interviewTitle: item.role,
-          score: item.score,
-          status: 'Passed',
-          certificateId: `CERT-${uuidv4().substring(0, 8).toUpperCase()}`
-        });
-      }
+      await Certificate.create({
+        userId: item.user._id,
+        interviewId: mockId,
+        candidateName: item.user.name,
+        interviewTitle: item.role,
+        score: item.score,
+        status: 'Passed',
+        certificateId: `CERT-${uuidv4().substring(0, 8).toUpperCase()}`
+      });
 
-      // Create AI Candidate Profile
       await CandidateAiProfile.create({
-        userId: item.candidate._id,
-        summary: `${item.candidate.name} is a high-performing candidate for ${item.role} positions. Demonstrated technical depth with an overall score of ${item.score}/100 and ${item.trust}% proctoring integrity.`,
-        strengths: item.questions.map(q => q.q.substring(0, 35) + '...'),
-        weaknesses: ['Elaborate on production logging & monitoring'],
-        recommendedRoles: [item.role, 'Senior Software Engineer'],
+        userId: item.user._id,
+        summary: `${item.user.name} is a top candidate for ${item.role} roles.`,
+        strengths: [item.role],
+        weaknesses: ['None'],
+        recommendedRoles: [item.role],
         matchScore: item.score,
         lastUpdated: new Date()
       });
     }
 
-    // 5. Seed Proctoring Violations
-    console.log('🛡️ Seeding Proctoring Violations...');
-    await Violation.create([
-      {
-        interviewId: sampleInterviewsData[1].candidate.email,
-        userEmail: 'priya.sharma@iet.edu',
-        violationType: 'FULLSCREEN_EXIT',
-        description: 'Candidate exited full-screen mode during response',
-        duration: 4,
-        severity: 'Medium',
-        trustScoreBefore: 100,
-        trustScoreAfter: 95
-      },
-      {
-        interviewId: sampleInterviewsData[3].candidate.email,
-        userEmail: 'sarah.j@stanford.edu',
-        violationType: 'TAB_SWITCH',
-        description: 'Switched active browser tab during session',
-        duration: 9,
-        severity: 'Medium',
-        trustScoreBefore: 80,
-        trustScoreAfter: 75
-      },
-      {
-        interviewId: sampleInterviewsData[3].candidate.email,
-        userEmail: 'sarah.j@stanford.edu',
-        violationType: 'LOOKING_AWAY',
-        description: 'Head pose turned away from primary webcam angle',
-        duration: 15,
-        severity: 'High',
-        trustScoreBefore: 75,
-        trustScoreAfter: 65
-      }
-    ]);
-
-    // 6. Seed Site Feedback Reviews
-    console.log('⭐ Seeding Site Feedback Reviews...');
+    // Seed Site Feedback
     await SiteFeedback.create([
       {
-        user: studentUsers[1]._id,
-        name: 'Priya Sharma',
-        email: 'priya.sharma@iet.edu',
-        feedback: 'IntervAI helped me crack my campus placement interviews! The speech recognition and real-time proctoring gave me genuine practice.',
+        user: studentUsers[0]._id,
+        name: 'Demo Candidate',
+        email: 'demo@interai.app',
+        feedback: 'IntervAI provides real interview simulation! The speech recognition and detailed AI evaluation scores gave me genuine confidence for campus drives.',
         rating: 5,
         needsUpgradation: false
       },
@@ -391,35 +442,22 @@ async function seedData() {
         user: recruiters[0]._id,
         name: 'Samantha Vance',
         email: 'recruiter@techcorp.com',
-        feedback: 'The recruiter dashboard talent pool saves us dozens of hours in candidate screening. The Hire/Consider badges are spot on!',
-        rating: 5,
-        needsUpgradation: false
-      },
-      {
-        user: studentUsers[2]._id,
-        name: 'Alex Chen',
-        email: 'alex.chen@berkeley.edu',
-        feedback: 'The scenario questions were unpredictable and challenged my architectural depth. Highly recommend to engineering students!',
+        feedback: 'The recruiter dashboard talent pool saves us dozens of hours in candidate screening.',
         rating: 5,
         needsUpgradation: false
       }
     ]);
 
-    // 7. Seed AI Request Logs
-    console.log('📊 Seeding AI Request Logs...');
+    // Seed AI Logs
     await AIRequestLog.create([
-      { userId: studentUsers[0]._id, requestType: 'GENERATE_INTERVIEW_QUESTIONS', provider: 'gemini', responseTime: 1150, success: true },
-      { userId: studentUsers[0]._id, requestType: 'EVALUATE_ANSWER', provider: 'gemini', responseTime: 1320, success: true },
-      { userId: studentUsers[1]._id, requestType: 'GENERATE_CANDIDATE_INSIGHTS', provider: 'gemini', responseTime: 920, success: true },
-      { userId: studentUsers[2]._id, requestType: 'EVALUATE_ANSWER', provider: 'gemini', responseTime: 1050, success: true }
+      { userId: studentUsers[0]._id, requestType: 'GENERATE_INTERVIEW_QUESTIONS', provider: 'gemini', responseTime: 1100, success: true },
+      { userId: studentUsers[0]._id, requestType: 'EVALUATE_ANSWER', provider: 'gemini', responseTime: 1250, success: true }
     ]);
 
-    console.log('\n🎉 ALL COLLECTIONS SUCCESSFULLY SEEDED ON ATLAS CLUSTER! 🎉');
+    console.log('\n🎉 ALL COLLECTIONS SUCCESSFULLY SEEDED! 🎉');
     console.log('====================================================');
-    console.log('📊 DATABASE SUMMARY:');
-    console.log(`- 👥 Total Users Created: ${1 + recruiters.length + studentUsers.length} (1 Admin, 2 Recruiters, 25 Students)`);
-    console.log(`- 🎙️ Mock Interviews & Evaluations: ${sampleInterviewsData.length}`);
-    console.log(`- 📜 Verified Certificates & AI Profiles: Populated`);
+    console.log(`- 👥 Total Users: ${1 + recruiters.length + studentUsers.length} (1 Admin, 2 Recruiters, 25 Students)`);
+    console.log(`- 🎙️ Demo Candidate (demo@interai.app): 3 Full Sessions & 12 Perfect Evaluations`);
     console.log('====================================================');
     process.exit(0);
 
