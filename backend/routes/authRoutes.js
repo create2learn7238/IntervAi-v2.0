@@ -4,7 +4,7 @@ const router = express.Router();
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Allow 10 requests per 15 minutes for smooth user registration & login
+  max: 200, // Generous limit for smooth auth & demo sign-in
   message: { success: false, message: 'Too many authentication attempts from this IP, please try again after 15 minutes.' }
 });
 

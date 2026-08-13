@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+    const host = window.location.hostname;
+    const backendHost = host.includes('frontend') ? host.replace('frontend', 'backend') : host;
+    return `https://${backendHost}/api/v1`;
+  }
+  return '/api/v1';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL: getBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
