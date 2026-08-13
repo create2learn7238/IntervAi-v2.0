@@ -51,8 +51,7 @@ export default function Login() {
     }
   };
 
-  const handleDemoClick = async () => {
-    const demoEmail = 'demo@interai.app';
+  const handleQuickDemoSignIn = async (demoEmail, roleName) => {
     const demoPw = 'password123';
     setEmail(demoEmail);
     setPassword(demoPw);
@@ -62,7 +61,7 @@ export default function Login() {
       const { data } = await loginUser({ email: demoEmail, password: demoPw });
       handleLoginSuccess({ _id: data._id, name: data.name, email: data.email, role: data.role || 'student' }, data.token);
     } catch (err) {
-      toast.error(err.response?.data?.message || err.response?.data?.error || 'Demo sign in failed. Please try again.');
+      toast.error(err.response?.data?.message || err.response?.data?.error || `Demo sign in for ${roleName} failed.`);
     } finally {
       setLoading(false);
     }
@@ -219,14 +218,41 @@ export default function Login() {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleDemoClick}
-            className="w-full h-11 rounded-full border border-[#CBD5E1] bg-white text-xs font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-          >
-            <Zap className="w-4 h-4 text-[#7C3AED]" />
-            <span>Instant Demo Sign In (1-Click)</span>
-          </button>
+          {/* 3 Quick One-Click Demo Accounts */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider text-center mb-1">
+              ⚡ Instant 1-Click Demo Portals
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickDemoSignIn('demo@interai.app', 'Student')}
+                className="py-2.5 px-2 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all shadow-sm cursor-pointer"
+                title="Explore Candidate Dashboard, Mock Session, AI Ratings & Certificates"
+              >
+                <span className="text-base">🎓</span>
+                <span>Student</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDemoSignIn('recruiter@techcorp.com', 'Recruiter')}
+                className="py-2.5 px-2 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all shadow-sm cursor-pointer"
+                title="Explore Recruiter Dashboard, Talent Discovery & Hire/Consider Badges"
+              >
+                <span className="text-base">💼</span>
+                <span>Recruiter</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDemoSignIn('admin@intervai.app', 'Admin')}
+                className="py-2.5 px-2 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-purple-700 font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all shadow-sm cursor-pointer"
+                title="Explore Admin Control Center & Platform Analytics"
+              >
+                <span className="text-base">🛡️</span>
+                <span>Admin</span>
+              </button>
+            </div>
+          </div>
 
           {/* Sign Up Prompt */}
           <div className="text-center mt-6 pt-4 border-t border-[#E2E8F0]">
