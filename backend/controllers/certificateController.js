@@ -39,6 +39,16 @@ exports.getCertificate = async (req, res) => {
   try {
     const cert = await Certificate.findOne({ certificateId: req.params.certId });
     if (!cert) return res.status(404).json({ error: 'Certificate not found' });
+    
+    // IDOR Fix: Ensure only the owner, an admin, or a recruiter can view the certificate
+    if (
+      cert.userId.toString() !== req.user._id.toString() &&
+      req.user.role !== 'admin' &&
+      req.user.role !== 'recruiter'
+    ) {
+      return res.status(403).json({ error: 'Unauthorized access to this certificate' });
+    }
+
     res.json({ success: true, data: cert });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch certificate' });

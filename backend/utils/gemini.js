@@ -1,5 +1,5 @@
 // Gemini AI utility with multi-key rotation
-// Ported from the original utils/Geminimodel.js (Next.js project)
+// Ported from the original utils/Geminimodel.js
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 
 const keyPool = (() => {
@@ -31,13 +31,15 @@ const safetySettings = [
 function isKeyExhausted(error) {
   const msg = (error?.message || '').toLowerCase();
   const status = error?.status || error?.code;
-  if ([400, 429, 403].includes(status)) return true;
+  if ([400, 429, 403, 500, 503].includes(status)) return true;
   return (
     msg.includes('resource has been exhausted') ||
     msg.includes('quota') ||
     msg.includes('rate limit') ||
     msg.includes('api key not valid') ||
-    msg.includes('permission denied')
+    msg.includes('permission denied') ||
+    msg.includes('503') ||
+    msg.includes('overloaded')
   );
 }
 

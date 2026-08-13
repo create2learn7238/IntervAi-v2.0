@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ShieldAlert, CheckCircle2, AlertTriangle, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { getMonitorSummary } from '../services/monitoringService';
 import { toast } from 'react-hot-toast';
 
 export default function LiveMonitor() {
   const { interviewid } = useParams();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,10 +22,14 @@ export default function LiveMonitor() {
   };
 
   useEffect(() => {
+    if (interviewid === 'new') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     fetchSummary();
     const interval = setInterval(fetchSummary, 5000); // Auto-refresh every 5s
     return () => clearInterval(interval);
-  }, [interviewid]);
+  }, [interviewid, navigate]);
 
   if (loading && !summary) {
     return <div className="h-screen bg-slate-950 flex items-center justify-center text-white">Loading Admin Panel...</div>;

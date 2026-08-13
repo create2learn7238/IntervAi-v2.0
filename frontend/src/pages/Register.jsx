@@ -33,7 +33,7 @@ export default function Register() {
       if (role === 'recruiter' || role === 'admin') {
         navigate('/dashboard/admin-analytics');
       } else {
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || err.response?.data?.error || 'Registration failed');
@@ -73,11 +73,10 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setRole('student')}
-                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    role === 'student'
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${role === 'student'
                       ? 'bg-[#F5F3FF] border-[#7C3AED] text-[#7C3AED] shadow-sm ring-1 ring-[#7C3AED]'
                       : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:bg-white'
-                  }`}
+                    }`}
                 >
                   <GraduationCap className="w-4 h-4" />
                   <span>Student</span>
@@ -85,11 +84,10 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setRole('recruiter')}
-                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    role === 'recruiter'
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${role === 'recruiter'
                       ? 'bg-[#F5F3FF] border-[#7C3AED] text-[#7C3AED] shadow-sm ring-1 ring-[#7C3AED]'
                       : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:bg-white'
-                  }`}
+                    }`}
                 >
                   <Briefcase className="w-4 h-4" />
                   <span>Recruiter</span>

@@ -15,7 +15,6 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const interviewRoutes = require('./routes/interviewRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
-const resumeRoutes = require('./routes/resumeRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -23,6 +22,7 @@ const recruiterRoutes = require('./routes/recruiterRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
+const siteFeedbackRoutes = require('./routes/siteFeedbackRoutes');
 
 const app = express();
 
@@ -82,7 +82,6 @@ app.use('/api/v1/', limiter);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/interviews', interviewRoutes);
 app.use('/api/v1/feedback', feedbackRoutes);
-app.use('/api/v1/resume', resumeRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/monitor', monitoringRoutes);
 app.use('/api/v1/admin', adminRoutes);
@@ -90,6 +89,7 @@ app.use('/api/v1/recruiter', recruiterRoutes);
 app.use('/api/v1/certificates', certificateRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/media', mediaRoutes);
+app.use('/api/v1/site-feedback', siteFeedbackRoutes);
 
 // Health check
 const mongoose = require('mongoose');

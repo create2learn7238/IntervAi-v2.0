@@ -1,106 +1,49 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
 import {
-  Users, Calendar, CheckCircle2, AlertTriangle, FileText,
-  Search, ShieldCheck, Download, Plus, X, Bell, User, Clock, Award
+  Users, CheckCircle2, ShieldCheck, Search, Filter, Award, 
+  MapPin, BookOpen, Star, Mail, Briefcase, ChevronRight
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
-import {
-  getRecruiterDashboard, getRecruiterCandidates,
-  getRecruiterInterviews, scheduleInterview, cancelInterview,
-  getRecruiterAnalytics, getNotifications, markNotificationRead
-} from '../services/recruiterService';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, AreaChart, Area
-} from 'recharts';
+import { getRecruiterDashboard, getRecruiterCandidates, getRecruiterAnalytics } from '../services/recruiterService';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const COLORS = ['#10B981', '#6366F1', '#F59E0B', '#F43F5E'];
 
 export default function RecruiterDashboard() {
   const [activeTab, setActiveTab] = useState('Overview');
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState({ candidateEmail: '', jobposition: '', jobdescription: '', jobexp: '', scheduledDate: '' });
-
   const [candidatesPage, setCandidatesPage] = useState(1);
-  const [interviewsPage, setInterviewsPage] = useState(1);
-
-  const queryClient = useQueryClient();
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [skillFilter, setSkillFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [minScoreFilter, setMinScoreFilter] = useState('');
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['recruiterDashboardData', candidatesPage, interviewsPage],
+    queryKey: ['recruiterDashboardData', candidatesPage, searchQuery, skillFilter, roleFilter, minScoreFilter],
     queryFn: async () => {
-      const [dashRes, candRes, intRes, anRes, notifRes] = await Promise.all([
+      const filters = { search: searchQuery, skill: skillFilter, targetRole: roleFilter, minScore: minScoreFilter };
+      const [dashRes, candRes, anRes] = await Promise.all([
         getRecruiterDashboard(),
-        getRecruiterCandidates(candidatesPage),
-        getRecruiterInterviews(interviewsPage),
-        getRecruiterAnalytics(),
-        getNotifications()
+        getRecruiterCandidates(candidatesPage, filters),
+        getRecruiterAnalytics()
       ]);
       return {
         dashboard: dashRes.data.data,
         candidates: candRes.data.data,
-        interviews: intRes.data.data,
-        analytics: anRes.data.data,
-        notifications: notifRes.data.data
+        totalPages: candRes.data.totalPages,
+        analytics: anRes.data.data
       };
-    }
+    },
+    keepPreviousData: true
   });
 
   const dashboardData = data?.dashboard;
-  const candidates = data?.candidates?.data || [];
-  const candidatesTotalPages = data?.candidates?.totalPages || 1;
-  const interviews = data?.interviews?.data || [];
-  const interviewsTotalPages = data?.interviews?.totalPages || 1;
+  const candidates = data?.candidates || [];
+  const totalPages = data?.totalPages || 1;
   const analytics = data?.analytics;
-  const notifications = data?.notifications?.data || [];
-
-  const scheduleMutation = useMutation({
-    mutationFn: (form) => scheduleInterview(form),
-    onSuccess: () => {
-      toast.success('Interview Scheduled!');
-      setShowScheduleModal(false);
-      queryClient.invalidateQueries(['recruiterDashboardData']);
-    },
-    onError: () => toast.error('Failed to schedule interview')
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: (id) => cancelInterview(id),
-    onSuccess: () => {
-      toast.success('Interview Cancelled');
-      queryClient.invalidateQueries(['recruiterDashboardData']);
-    },
-    onError: () => toast.error('Failed to cancel')
-  });
-
-  const notifMutation = useMutation({
-    mutationFn: (id) => markNotificationRead(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['recruiterDashboardData']);
-    }
-  });
-
-  const handleScheduleSubmit = (e) => {
-    e.preventDefault();
-    scheduleMutation.mutate(scheduleForm);
-  };
-
-  const handleCancelInterview = (id) => {
-    if (!window.confirm('Are you sure you want to cancel this interview?')) return;
-    cancelMutation.mutate(id);
-  };
-
-  const handleNotificationClick = (notif) => {
-    if (!notif.read) {
-      notifMutation.mutate(notif._id);
-    }
-  };
 
   const renderBadge = (text) => {
     if (text === 'Hire') return <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">HIRE</span>;
@@ -109,15 +52,8 @@ export default function RecruiterDashboard() {
     return <span className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded-full text-xs font-bold">{text}</span>;
   };
 
-  if (isLoading) return <DashboardLayout><div className="p-10 text-slate-500">Loading Dashboard Data...</div></DashboardLayout>;
+  if (isLoading && !data) return <DashboardLayout><div className="p-10 text-slate-500">Loading Talent Dashboard...</div></DashboardLayout>;
   if (isError) return <DashboardLayout><div className="p-10 text-rose-500">Failed to load dashboard. Please refresh.</div></DashboardLayout>;
-
-  const filteredCandidates = candidates.filter(c => 
-    (c.candidateEmail || '').includes(searchQuery) &&
-    (statusFilter === 'All' || c.status === statusFilter)
-  );
-
-  const unreadNotifs = notifications.filter(n => !n.read).length;
 
   return (
     <DashboardLayout>
@@ -126,56 +62,18 @@ export default function RecruiterDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700 mb-2">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Recruiter Portal</span>
+              <span>Talent Discovery Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Recruiter Dashboard
             </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-50"
-            >
-              <Bell className="w-5 h-5 text-slate-600" />
-              {unreadNotifs > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full"></span>}
-            </button>
-            {activeTab === 'Interviews' && (
-              <button
-                onClick={() => setShowScheduleModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" /> Schedule
-              </button>
-            )}
+            <p className="text-sm text-slate-500 mt-1">Discover, filter, and review high-performing candidates based on AI interview results.</p>
           </div>
         </div>
 
-        {/* Notification Dropdown */}
-        {showNotifications && (
-          <div className="absolute top-16 right-0 w-80 bg-white border border-slate-200 shadow-xl rounded-xl z-50 overflow-hidden">
-            <div className="bg-slate-50 p-3 border-b border-slate-200 font-bold text-sm text-slate-700 flex justify-between">
-              Notifications
-              <button onClick={() => setShowNotifications(false)}><X className="w-4 h-4 text-slate-400" /></button>
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-4 text-sm text-slate-500 text-center">No notifications</div>
-              ) : (
-                notifications.map(n => (
-                  <div key={n._id} onClick={() => handleNotificationClick(n)} className={`p-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${!n.read ? 'bg-indigo-50/30' : ''}`}>
-                    <p className={`text-sm ${!n.read ? 'font-bold text-slate-900' : 'text-slate-600'}`}>{n.message}</p>
-                    <span className="text-[10px] text-slate-400">{new Date(n.createdAt).toLocaleString()}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Custom Tabs */}
         <div className="flex border-b border-slate-200 gap-6 overflow-x-auto">
-          {['Overview', 'Candidates', 'Interviews', 'Analytics', 'Reports'].map(tab => (
+          {['Overview', 'Talent Pool', 'Analytics'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -193,18 +91,14 @@ export default function RecruiterDashboard() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Assigned Candidates', val: dashboardData?.totalCandidates || 0, icon: Users, color: 'text-indigo-600' },
-                { label: 'Upcoming Interviews', val: dashboardData?.scheduledInterviews || 0, icon: Calendar, color: 'text-blue-500' },
-                { label: 'Completed Interviews', val: dashboardData?.completedInterviews || 0, icon: CheckCircle2, color: 'text-emerald-500' },
-                { label: 'In Progress', val: dashboardData?.activeInterviews || 0, icon: Clock, color: 'text-amber-500' },
+                { label: 'Total Candidates', val: dashboardData?.totalCandidates || 0, icon: Users, color: 'text-indigo-600' },
+                { label: 'Active Candidates', val: dashboardData?.activeCandidates || 0, icon: CheckCircle2, color: 'text-emerald-500' },
                 { label: 'Avg AI Score', val: dashboardData?.averageCandidateScore || 0, icon: Award, color: 'text-purple-500' },
                 { label: 'Avg Trust Score', val: dashboardData?.averageTrustScore || 0, icon: ShieldCheck, color: 'text-rose-500' },
-                { label: 'Requires Review', val: dashboardData?.candidatesRequiringReview || 0, icon: AlertTriangle, color: 'text-orange-500' },
-                { label: 'Reports Pending', val: dashboardData?.reportsPendingReview || 0, icon: FileText, color: 'text-teal-500' },
               ].map((s) => (
                 <div key={s.label} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-tight w-20">{s.label}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-tight w-24">{s.label}</span>
                     <div className={`p-1.5 rounded-lg bg-slate-50 ${s.color}`}><s.icon className="w-4 h-4" /></div>
                   </div>
                   <p className="text-2xl font-extrabold text-slate-900">{s.val}</p>
@@ -245,128 +139,134 @@ export default function RecruiterDashboard() {
           </div>
         )}
 
-        {/* CANDIDATES TAB */}
-        {activeTab === 'Candidates' && (
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between gap-4 border-b border-slate-100 pb-4">
-              <h3 className="text-lg font-bold text-slate-900">Candidate Management</h3>
-              <div className="flex gap-2">
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                  <option value="All">All Statuses</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Scheduled">Scheduled</option>
-                </select>
+        {/* TALENT POOL (CANDIDATES) TAB */}
+        {activeTab === 'Talent Pool' && (
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+            
+            {/* Discovery Filters */}
+            <div className="flex flex-col md:flex-row gap-4 border-b border-slate-100 pb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={e => {setSearchQuery(e.target.value); setCandidatesPage(1);}}
+                  className="w-full h-10 pl-9 pr-4 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-3 flex-wrap">
                 <div className="relative">
-                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                  <Filter className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Search email..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="h-9 pl-9 pr-4 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                    placeholder="Filter by Skill..."
+                    value={skillFilter}
+                    onChange={e => {setSkillFilter(e.target.value); setCandidatesPage(1);}}
+                    className="w-40 h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Role..."
+                    value={roleFilter}
+                    onChange={e => {setRoleFilter(e.target.value); setCandidatesPage(1);}}
+                    className="w-32 h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <select 
+                  value={minScoreFilter} 
+                  onChange={e => {setMinScoreFilter(e.target.value); setCandidatesPage(1);}} 
+                  className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none"
+                >
+                  <option value="">Any Score</option>
+                  <option value="9">9+ Score</option>
+                  <option value="8">8+ Score</option>
+                  <option value="7">7+ Score</option>
+                </select>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-xs font-bold text-slate-500 uppercase border-b border-slate-100">
-                    <th className="pb-3 px-4">Candidate Email</th>
-                    <th className="pb-3 px-4">Role</th>
-                    <th className="pb-3 px-4">AI Score</th>
-                    <th className="pb-3 px-4">Trust</th>
-                    <th className="pb-3 px-4">Recommendation</th>
-                    <th className="pb-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredCandidates.map(c => (
-                    <tr key={c.mockid} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-900">{c.candidateEmail || 'Self-Assigned'}</td>
-                      <td className="py-3 px-4 text-slate-500">{c.jobposition}</td>
-                      <td className="py-3 px-4 font-bold">{c.aiScore}/10</td>
-                      <td className="py-3 px-4 font-bold">{c.trustScore}%</td>
-                      <td className="py-3 px-4">{renderBadge(c.recommendation)}</td>
-                      <td className="py-3 px-4 text-right">
-                        <Link to={`/dashboard/recruiter/candidate/${c.mockid}`} className="text-indigo-600 hover:underline text-xs font-bold">View Profile</Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredCandidates.length === 0 && <div className="p-8 text-center text-slate-500 text-sm">No candidates match filters.</div>}
+
+            {/* Candidates Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {candidates.map(c => (
+                <div key={c._id} className="border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow bg-white flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg shrink-0">
+                          {c.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">{c.name}</h4>
+                          <p className="text-xs text-slate-500 truncate w-32">{c.targetRole || 'Software Engineer'}</p>
+                        </div>
+                      </div>
+                      {renderBadge(c.recommendation)}
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" /> <span className="truncate">{c.email}</span>
+                      </div>
+                      {c.college && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <BookOpen className="w-3.5 h-3.5 text-slate-400" /> <span className="truncate">{c.college}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {(c.skills || []).slice(0, 4).map(skill => (
+                        <span key={skill} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-semibold border border-slate-200">
+                          {skill}
+                        </span>
+                      ))}
+                      {(c.skills?.length > 4) && <span className="px-2 py-0.5 bg-slate-50 text-slate-400 rounded-md text-[10px] font-semibold">+{c.skills.length - 4}</span>}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">AI Score</p>
+                        <p className="text-lg font-black text-indigo-600">{c.aiScore}<span className="text-sm text-slate-400 font-medium">/10</span></p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Trust</p>
+                        <p className="text-lg font-black text-slate-700">{c.trustScore}%</p>
+                      </div>
+                    </div>
+                    <Link to={`/dashboard/recruiter/candidate/${c._id}`} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                      <ChevronRight className="w-5 h-5" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
-            {/* Pagination Controls */}
+
+            {candidates.length === 0 && !isLoading && (
+              <div className="p-12 text-center text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                No candidates match your discovery filters.
+              </div>
+            )}
+
+            {/* Pagination */}
             <div className="flex justify-between items-center pt-4 border-t border-slate-100">
               <button
                 disabled={candidatesPage <= 1}
                 onClick={() => setCandidatesPage(p => p - 1)}
-                className="px-3 py-1 bg-slate-100 text-slate-600 rounded disabled:opacity-50 text-sm font-semibold"
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg disabled:opacity-50 text-sm font-semibold hover:bg-slate-50"
               >
                 Previous
               </button>
-              <span className="text-sm font-bold text-slate-500">Page {candidatesPage} of {candidatesTotalPages}</span>
+              <span className="text-sm font-bold text-slate-500">Page {candidatesPage} of {totalPages}</span>
               <button
-                disabled={candidatesPage >= candidatesTotalPages}
+                disabled={candidatesPage >= totalPages}
                 onClick={() => setCandidatesPage(p => p + 1)}
-                className="px-3 py-1 bg-slate-100 text-slate-600 rounded disabled:opacity-50 text-sm font-semibold"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* INTERVIEWS TAB */}
-        {activeTab === 'Interviews' && (
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Interview Management</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-xs font-bold text-slate-500 uppercase border-b border-slate-100">
-                    <th className="pb-3 px-4">Interview ID</th>
-                    <th className="pb-3 px-4">Candidate</th>
-                    <th className="pb-3 px-4">Scheduled Date</th>
-                    <th className="pb-3 px-4">Violations</th>
-                    <th className="pb-3 px-4">Status</th>
-                    <th className="pb-3 px-4 text-right">Manage</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {interviews.map(i => (
-                    <tr key={i.mockid} className="hover:bg-slate-50">
-                      <td className="py-3 px-4 font-mono text-xs text-slate-500">{i.mockid}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-900">{i.candidateEmail || 'Self'}</td>
-                      <td className="py-3 px-4 text-slate-500">{i.scheduledDate ? new Date(i.scheduledDate).toLocaleDateString() : 'N/A'}</td>
-                      <td className="py-3 px-4 text-rose-500 font-bold">{i.violationsCount || 0}</td>
-                      <td className="py-3 px-4">{renderBadge(i.status)}</td>
-                      <td className="py-3 px-4 text-right">
-                        <Link to={`/dashboard/recruiter/candidate/${i.mockid}`} className="text-indigo-600 hover:underline text-xs font-bold mr-3">Details</Link>
-                        {i.status !== 'Cancelled' && (
-                          <button onClick={() => handleCancelInterview(i.mockid)} className="text-rose-500 hover:underline text-xs font-bold">Cancel</button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Pagination Controls */}
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-              <button
-                disabled={interviewsPage <= 1}
-                onClick={() => setInterviewsPage(p => p - 1)}
-                className="px-3 py-1 bg-slate-100 text-slate-600 rounded disabled:opacity-50 text-sm font-semibold"
-              >
-                Previous
-              </button>
-              <span className="text-sm font-bold text-slate-500">Page {interviewsPage} of {interviewsTotalPages}</span>
-              <button
-                disabled={interviewsPage >= interviewsTotalPages}
-                onClick={() => setInterviewsPage(p => p + 1)}
-                className="px-3 py-1 bg-slate-100 text-slate-600 rounded disabled:opacity-50 text-sm font-semibold"
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg disabled:opacity-50 text-sm font-semibold hover:bg-slate-50"
               >
                 Next
               </button>
@@ -378,82 +278,18 @@ export default function RecruiterDashboard() {
         {activeTab === 'Analytics' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Skill Performance</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Skill Demand</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.skillPerformance || []} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" domain={[0, 100]} />
-                    <YAxis dataKey="skill" type="category" width={100} />
+                    <XAxis type="number" />
+                    <YAxis dataKey="skill" type="category" width={100} tick={{fontSize: 10}} />
                     <Tooltip />
                     <Bar dataKey="score" fill="#6366F1" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Weekly Interview Activity</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics?.completionTrend || []}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="scheduled" stackId="1" stroke="#8884d8" fill="#8884d8" />
-                    <Area type="monotone" dataKey="completed" stackId="1" stroke="#10B981" fill="#10B981" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* REPORTS TAB */}
-        {activeTab === 'Reports' && (
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4">Download Reports</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {['Candidate Report', 'Interview Report', 'AI Feedback Report', 'Trust Report', 'Violation Report'].map(rep => (
-                <div key={rep} className="p-4 border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => toast.success(`Downloaded ${rep}`)}>
-                  <span className="font-semibold text-slate-700 text-sm">{rep}</span>
-                  <button className="p-2 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100">
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Scheduling Modal */}
-        {showScheduleModal && (
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-slate-900">Schedule Interview</h2>
-                <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
-              </div>
-              <form onSubmit={handleScheduleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Candidate Email</label>
-                  <input required type="email" value={scheduleForm.candidateEmail} onChange={e => setScheduleForm({...scheduleForm, candidateEmail: e.target.value})} className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Job Role</label>
-                  <input required type="text" value={scheduleForm.jobposition} onChange={e => setScheduleForm({...scheduleForm, jobposition: e.target.value})} className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Experience (Years)</label>
-                  <input required type="text" value={scheduleForm.jobexp} onChange={e => setScheduleForm({...scheduleForm, jobexp: e.target.value})} className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Job Description</label>
-                  <textarea required value={scheduleForm.jobdescription} onChange={e => setScheduleForm({...scheduleForm, jobdescription: e.target.value})} className="w-full h-20 p-3 border border-slate-300 rounded-lg text-sm"></textarea>
-                </div>
-                <button type="submit" className="w-full bg-indigo-600 text-white font-bold h-10 rounded-lg hover:bg-indigo-700">Schedule Now</button>
-              </form>
             </div>
           </div>
         )}

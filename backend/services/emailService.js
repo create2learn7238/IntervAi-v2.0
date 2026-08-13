@@ -61,3 +61,59 @@ exports.sendInterviewReport = async (recipient, { jobposition, overallRating, fi
     
     return previewUrl;
 };
+
+exports.sendPasswordResetOTP = async (recipient, resetCode) => {
+    let transporter;
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: Number(process.env.EMAIL_PORT) || 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+    } else {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+    }
+
+    const mailOptions = {
+      from: '"IntervAI Security" <noreply@intervai.app>',
+      to: recipient,
+      subject: 'Password Reset Verification Code - IntervAI',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 12px; background-color: #FAFAFC;">
+          <h2 style="color: #4F46E5; margin-bottom: 8px;">Password Reset Request</h2>
+          <p style="color: #475569; font-size: 15px;">You requested to reset your password. Use the following 6-digit verification code to complete the process. This code will expire in 15 minutes.</p>
+          
+          <div style="background-color: #FFFFFF; padding: 24px; border-radius: 10px; margin: 24px 0; border: 1px solid #E2E8F0; text-align: center;">
+            <h1 style="margin: 0; color: #0F172A; font-size: 32px; letter-spacing: 4px;">${resetCode}</h1>
+          </div>
+
+          <p style="color: #475569; font-size: 13px;">If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+
+          <hr style="border: none; border-top: 1px solid #E2E8F0; margin: 20px 0;" />
+          <p style="font-size: 11px; color: #94A3B8; text-align: center;">© 2026 IntervAI Inc. — AI Career Preparation Platform</p>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+
+    if (previewUrl) {
+      console.log('Ethereal test email preview URL:', previewUrl);
+    }
+    
+    return previewUrl;
+};

@@ -6,21 +6,70 @@ import {
   Bot,
   Briefcase,
   Layers,
+  Plus,
 } from 'lucide-react';
 
 /**
  * DashboardForm - Form Component with validation styling and short, simple placeholders.
  */
 export default function DashboardForm({ onSubmit, loading = false }) {
-  const [formData, setFormData] = useState({
-    jobPosition: '',
-    jobExperience: '',
-    jobDescription: [],
-    interviewType: 'Technical',
+  const [formData, setFormData] = useState(() => {
+    const savedForm = localStorage.getItem('lastInterviewForm');
+    if (savedForm) {
+      try {
+        return JSON.parse(savedForm);
+      } catch (e) {
+        console.error('Failed to parse saved form data:', e);
+      }
+    }
+    return {
+      jobPosition: '',
+      jobExperience: '',
+      jobDescription: [],
+      interviewType: 'Technical',
+    };
   });
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [newTechInput, setNewTechInput] = useState('');
+
+  const roleTechMap = {
+    'Software Engineer': ['Java', 'Python', 'C++', 'SQL', 'Git', 'Docker'],
+    'Frontend Developer': ['React', 'Angular', 'Vue', 'HTML/CSS', 'JavaScript', 'TypeScript', 'Tailwind'],
+    'Backend Developer': ['Node.js', 'Python', 'Java', 'Go', 'MongoDB', 'SQL', 'Redis', 'Spring Boot'],
+    'Full Stack Developer': ['React', 'Node.js', 'MongoDB', 'Express', 'SQL', 'TypeScript'],
+    'Mobile App Developer': ['React Native', 'Flutter', 'Swift', 'Kotlin', 'Firebase'],
+    'Data Scientist': ['Python', 'R', 'SQL', 'Pandas', 'TensorFlow', 'PyTorch'],
+    'DevOps Engineer': ['AWS', 'Docker', 'Kubernetes', 'Jenkins', 'Terraform', 'Linux'],
+    'Cloud Architect': ['AWS', 'Azure', 'GCP', 'Kubernetes', 'Terraform'],
+    'Product Manager': ['Jira', 'Agile', 'Scrum', 'Figma', 'Product Strategy']
+  };
+
+  const allTechs = Array.from(new Set(Object.values(roleTechMap).flat().concat([
+    '.NET', 'PHP', 'Ruby', 'Django', 'GraphQL', 'REST API'
+  ]))).sort();
+
+  const suggestedTechs = formData.jobPosition && roleTechMap[formData.jobPosition] 
+    ? roleTechMap[formData.jobPosition] 
+    : allTechs.slice(0, 10);
+
+  const displayedTechs = Array.from(new Set([...suggestedTechs, ...formData.jobDescription]));
+
+  const handleAddCustomTech = () => {
+    const tech = newTechInput.trim();
+    if (!tech) return;
+    
+    setFormData(prev => {
+      if (prev.jobDescription.includes(tech)) return prev;
+      const newDesc = [...prev.jobDescription, tech];
+      if (touched.jobDescription) {
+        setErrors(e => ({ ...e, jobDescription: validateField('jobDescription', newDesc) }));
+      }
+      return { ...prev, jobDescription: newDesc };
+    });
+    setNewTechInput('');
+  };
 
   const validateField = (name, value) => {
     let errorMsg = '';
@@ -75,6 +124,7 @@ export default function DashboardForm({ onSubmit, loading = false }) {
     const hasError = Object.values(newErrors).some((msg) => Boolean(msg));
 
     if (!hasError && onSubmit) {
+      localStorage.setItem('lastInterviewForm', JSON.stringify(formData));
       onSubmit({
         ...formData,
         jobDescription: formData.jobDescription.join(', '),
@@ -230,11 +280,7 @@ export default function DashboardForm({ onSubmit, loading = false }) {
             Job Tech Stack / Requirements <span className="text-slate-400 font-normal">(Optional)</span>
           </label>
           <div className="flex flex-wrap gap-2 pt-1">
-            {[
-              'React', 'Node.js', 'MongoDB', 'Angular', 'Python',
-              'Django', 'Java', 'Spring Boot', 'AWS', 'Docker',
-              'Kubernetes', 'SQL', 'Firebase', 'React Native', 'Go', '.NET'
-            ].map(tech => (
+            {displayedTechs.map(tech => (
               <button
                 type="button"
                 key={tech}
@@ -263,6 +309,31 @@ export default function DashboardForm({ onSubmit, loading = false }) {
               </button>
             ))}
           </div>
+
+          {/* Add Custom Tech Input */}
+          <div className="flex gap-2 mt-3">
+            <input
+              type="text"
+              value={newTechInput}
+              onChange={(e) => setNewTechInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustomTech();
+                }
+              }}
+              placeholder="Add custom skill (e.g. GraphQL)"
+              className="flex-1 h-9 px-3 border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+            />
+            <button
+              type="button"
+              onClick={handleAddCustomTech}
+              className="px-4 h-9 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition-colors flex items-center gap-1 border border-indigo-200"
+            >
+              <Plus className="w-4 h-4" /> Add
+            </button>
+          </div>
+
           {touched.jobDescription && errors.jobDescription && (
             <p className="text-xs font-normal text-rose-600 flex items-center gap-1 mt-1">
               <AlertCircle className="w-3.5 h-3.5" />
@@ -284,6 +355,7 @@ export default function DashboardForm({ onSubmit, loading = false }) {
               });
               setErrors({});
               setTouched({});
+              setNewTechInput('');
             }}
             className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >

@@ -39,7 +39,6 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wider mb-4">Product</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-[#52525B] dark:text-[#94A3B8]">
               <li><Link to="/dashboard" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">AI Mock Interview</Link></li>
-              <li><Link to="/dashboard/resume-analyzer" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Resume Parser</Link></li>
               <li><Link to="/dashboard/questions" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Question Bank</Link></li>
               <li><Link to="/dashboard/dressing-posture" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Dress & Posture</Link></li>
             </ul>
@@ -61,11 +60,7 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] uppercase tracking-wider mb-4">Resources</h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-[#52525B] dark:text-[#94A3B8]">
-              <li><Link to="/pricing" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Plans & Pricing</Link></li>
-              <li><Link to="/help" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Help Center & FAQ</Link></li>
               <li><a href="#" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">API Documentation</a></li>
-              <li><a href="#" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-[#4338CA] dark:hover:text-white transition-colors">Terms of Service</a></li>
             </ul>
           </div>
         </div>

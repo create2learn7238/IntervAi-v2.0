@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Calendar, Briefcase, ArrowRight, Search, Filter, Trash2, Award } from 'lucide-react';
+import { History, ArrowRight, Search } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { getInterviews } from '../services/interviewService';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +22,7 @@ export default function InterviewHistory() {
       })
       .catch(() => toast.error('Failed to load session history'))
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, navigate]);
 
   const filtered = interviews.filter((i) =>
     i.jobposition?.toLowerCase().includes(search.toLowerCase()) ||

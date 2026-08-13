@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -19,13 +18,12 @@ import {
   Gauge,
   Clock,
   Video,
-  Sparkles,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProgressRing from '../components/ProgressRing';
 import CertificateModal from '../components/CertificateModal';
 import { getFeedback } from '../services/feedbackService';
-import { getInterview } from '../services/interviewService';
+import { getInterview, sendEmailReport } from '../services/interviewService';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -42,6 +40,10 @@ export default function Feedback() {
   const [isCertOpen, setIsCertOpen] = useState(false);
 
   useEffect(() => {
+    if (interviewid === 'new') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     getInterview(interviewid)
       .then(({ data }) => setInterviewData(data))
       .catch(() => { });
@@ -50,7 +52,7 @@ export default function Feedback() {
       .then(({ data }) => setFeedbackData(Array.isArray(data) ? data : []))
       .catch(() => toast.error('Failed to load feedback report'))
       .finally(() => setLoading(false));
-  }, [interviewid]);
+  }, [interviewid, navigate]);
 
   const hasAnswers = feedbackData.length > 0;
 
@@ -121,9 +123,9 @@ export default function Feedback() {
     }
     setSendingEmail(true);
     try {
-      const res = await axios.post('/api/interviews/send-email-report', {
+      const res = await sendEmailReport({
         email: user?.email || 'student@gmail.com',
-        jobposition: 'Software Developer',
+        jobposition: interviewData?.jobposition || 'Software Developer',
         overallRating: avgRating,
         fillerWordCount: totalFillers,
         tone: avgConfidence > 75 ? 'Confident & Articulate' : 'Needs Practice',
@@ -237,6 +239,30 @@ export default function Feedback() {
               </button>
             </div>
           </div>
+
+
+
+          {/* Full Session Video Player (Admin/Recruiter Only) */}
+          {interviewData?.sessionVideoUrl && (user?.role === 'admin' || user?.role === 'recruiter') && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                  <Video className="w-5 h-5 text-indigo-600" />
+                  <span>Full Session Recording</span>
+                </div>
+                <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                  Auto-destroys in 1 Hour (TTL)
+                </span>
+              </div>
+              <div className="flex justify-center">
+                <video
+                  controls
+                  src={interviewData.sessionVideoUrl}
+                  className="w-full max-w-3xl rounded-xl border border-slate-300 shadow-md bg-black aspect-video"
+                />
+              </div>
+            </div>
+          )}
 
           {/* AI Metrics Grid (Pace, Clarity, Depth, Eye Contact, Confidence) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -375,25 +401,6 @@ export default function Feedback() {
                             "{data.useranswer || 'No answer recorded'}"
                           </p>
 
-                          {/* Recorded Session Video Player */}
-                          {data.videoBlobUrl && (
-                            <div className="pt-2 border-t border-slate-100 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700">
-                                  <Video className="w-4 h-4 text-indigo-600" />
-                                  <span>Recorded Session Video</span>
-                                </div>
-                                <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                  Auto-destroys in 1 Hour (TTL)
-                                </span>
-                              </div>
-                              <video
-                                controls
-                                src={data.videoBlobUrl}
-                                className="w-full max-w-lg rounded-lg border border-slate-300 shadow-sm bg-black aspect-video"
-                              />
-                            </div>
-                          )}
                         </div>
 
                         {/* Ideal Model Answer */}

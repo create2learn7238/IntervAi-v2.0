@@ -1,14 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { getPlatformAnalytics } from '../services/analyticsService';
 import {
-  Zap,
   ArrowRight,
   Mic,
-  Video,
-  FileText,
-  Target,
   Bot,
   BarChart3,
 } from 'lucide-react';
@@ -16,10 +11,26 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AiBackgroundAnimation from '../components/AiBackgroundAnimation';
 
+import SiteFeedbackForm from '../components/SiteFeedbackForm';
+
 export default function Home() {
-  const handlePillClick = (label) => {
-    toast.success(`Selected ${label} practice mode`);
-  };
+  const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await getPlatformAnalytics();
+        if (res.data?.data) {
+          setStats(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch platform stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
+
+
 
   return (
     <div className="min-h-screen bg-[#FAFAFC] font-sans antialiased text-[#0F172A] selection:bg-[#7C3AED]/10 selection:text-[#7C3AED] relative overflow-x-hidden">
@@ -43,7 +54,7 @@ export default function Home() {
           </h1>
 
           <p className="mt-6 text-base sm:text-xl text-[#64748B] max-w-2xl mx-auto font-normal leading-relaxed">
-            Practice voice & video mock questions, verify ATS resume compatibility, and build confidence with real-time AI feedback.
+            Practice voice & video mock questions, and build confidence with real-time AI feedback.
           </p>
 
           {/* CTA Buttons */}
@@ -55,12 +66,6 @@ export default function Home() {
               <span>Start Practicing</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link
-              to="/pricing"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-9 py-4 rounded-full border border-[#CBD5E1] bg-white text-base font-bold text-[#0F172A] hover:bg-[#F8FAFC] transition-all shadow-sm"
-            >
-              View Pricing
-            </Link>
           </div>
 
           {/* Target Audience Pills */}
@@ -71,14 +76,13 @@ export default function Home() {
               { emoji: '💼', label: 'Job Seekers' },
               { emoji: '🏫', label: 'Campus Placement Drives' },
             ].map((pill) => (
-              <button
+              <div
                 key={pill.label}
-                onClick={() => handlePillClick(pill.label)}
-                className="px-6 py-3 rounded-full bg-white border border-[#CBD5E1] text-[#0F172A] shadow-sm hover:border-[#7C3AED] hover:text-[#7C3AED] hover:bg-[#F5F3FF] transition-all flex items-center gap-2.5 cursor-pointer hover:-translate-y-0.5"
+                className="px-6 py-3 rounded-full bg-white border border-[#CBD5E1] text-[#0F172A] shadow-sm flex items-center gap-2.5 cursor-default"
               >
                 <span className="text-base">{pill.emoji}</span>
                 <span>{pill.label}</span>
-              </button>
+              </div>
             ))}
           </div>
 
@@ -134,14 +138,13 @@ export default function Home() {
               Tools Built for Placement Success
             </h2>
             <p className="text-base sm:text-lg text-[#64748B] mt-4 font-normal">
-              Practice tailored technical questions, optimize your ATS resume score, and refine video presentation posture.
+              Practice tailored technical questions and refine video presentation posture.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               { icon: Mic, title: 'AI Voice Mock Studio', desc: 'Practice answering custom questions tailored to job description, years of experience, and difficulty level.' },
-              { icon: FileText, title: 'ATS Resume Matcher', desc: 'Compare your resume against real job postings to find missing keywords and formatting improvements.' },
               { icon: BarChart3, title: 'Detailed Feedback Reports', desc: 'Get 10-point ratings, ideal model answers, grammatical suggestions, and STAR method analysis.' },
             ].map((f) => {
               const Icon = f.icon;
@@ -158,6 +161,32 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Platform Analytics Grid */}
+      <section className="py-20 bg-white border-t border-[#E2E8F0] relative z-10">
+        <div className="w-[95%] max-w-6xl mx-auto px-3 sm:px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 divide-x divide-[#E2E8F0]/50">
+            <div className="text-center flex flex-col items-center justify-center space-y-3">
+              <h3 className="text-4xl md:text-5xl font-black text-[#7C3AED] tracking-tighter">{stats.totalUsers || 0}</h3>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-widest">Total Users</p>
+            </div>
+            <div className="text-center flex flex-col items-center justify-center space-y-3">
+              <h3 className="text-4xl md:text-5xl font-black text-[#7C3AED] tracking-tighter">{stats.totalInterviews || 0}</h3>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-widest">Interviews Taken</p>
+            </div>
+            <div className="text-center flex flex-col items-center justify-center space-y-3">
+              <h3 className="text-4xl md:text-5xl font-black text-[#7C3AED] tracking-tighter">50+</h3>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-widest">Roles Supported</p>
+            </div>
+            <div className="text-center flex flex-col items-center justify-center space-y-3">
+              <h3 className="text-4xl md:text-5xl font-black text-[#7C3AED] tracking-tighter">100%</h3>
+              <p className="text-xs font-bold text-[#64748B] uppercase tracking-widest">Free to Use</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <SiteFeedbackForm />
 
       <Footer />
     </div>

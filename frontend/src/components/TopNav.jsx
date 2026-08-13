@@ -2,21 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Search,
-  Bell,
   User,
   Settings,
   Plus,
-  X,
   Menu,
   LogOut,
   ChevronDown,
-  ShieldCheck,
-  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * TopNav - Top Navbar with Search Bar, Notifications Bell Dropdown, and User Avatar Dropdown.
+ * TopNav - Top Navbar with Search Bar and User Avatar Dropdown.
  *
  * @param {boolean} collapsed - Sidebar desktop collapse state
  * @param {Function} onOpenNewInterview - Callback to open New Mock Session modal
@@ -26,36 +22,14 @@ export default function TopNav({ collapsed, onOpenNewInterview, onOpenMobileMenu
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const notificationRef = useRef(null);
   const userMenuRef = useRef(null);
-
-  const notifications = [
-    {
-      id: 1,
-      title: 'ATS Resume Match Ready',
-      desc: '86% compatibility match with Senior Frontend Engineer.',
-      time: '10m ago',
-      unread: true,
-    },
-    {
-      id: 2,
-      title: 'AI Mock Feedback Generated',
-      desc: 'Detailed analysis for React System Design session.',
-      time: '1h ago',
-      unread: true,
-    },
-  ];
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
-        setShowNotifications(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setShowUserMenu(false);
       }
@@ -73,7 +47,7 @@ export default function TopNav({ collapsed, onOpenNewInterview, onOpenMobileMenu
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -111,9 +85,12 @@ export default function TopNav({ collapsed, onOpenNewInterview, onOpenMobileMenu
       {/* Right Navbar Controls */}
       <div className="flex items-center gap-3">
         {/* AI Status Badge */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-semibold text-emerald-700">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>AI Engine Ready</span>
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-50/50 border border-emerald-100/50 shadow-sm backdrop-blur-md">
+          <div className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">AI Engine Ready</span>
         </div>
 
         {/* Quick Action Button */}
@@ -125,61 +102,10 @@ export default function TopNav({ collapsed, onOpenNewInterview, onOpenMobileMenu
           <span className="hidden sm:inline">New Session</span>
         </button>
 
-        {/* Notifications Dropdown */}
-        <div className="relative" ref={notificationRef}>
-          <button
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowUserMenu(false);
-            }}
-            className="relative p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600 ring-2 ring-white" />
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-lg p-4 z-50 animate-in fade-in space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <h4 className="text-xs font-semibold tracking-tight text-slate-900">
-                  Notifications
-                </h4>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="text-slate-400 hover:text-slate-700"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
-                {notifications.map((item) => (
-                  <div
-                    key={item.id}
-                    className="py-2.5 px-2 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer space-y-1"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-semibold text-slate-900">{item.title}</p>
-                      <span className="text-[10px] text-slate-400 shrink-0">{item.time}</span>
-                    </div>
-                    <p className="text-xs font-normal leading-relaxed text-slate-600">
-                      {item.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* User Avatar Dropdown */}
         <div className="relative" ref={userMenuRef}>
           <button
-            onClick={() => {
-              setShowUserMenu(!showUserMenu);
-              setShowNotifications(false);
-            }}
+            onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 p-1 pl-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-semibold text-xs flex items-center justify-center">

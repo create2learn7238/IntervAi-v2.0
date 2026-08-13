@@ -10,7 +10,7 @@ export default function AuthEventWrapper({ children }) {
     const handleUnauthorized = () => {
       // Avoid redirect loops or redirecting if already on login/register pages
       if (location.pathname !== '/login' && location.pathname !== '/register' && location.pathname !== '/') {
-        toast.error('Session expired. Please log in again.');
+        toast.error('Session expired. Please log in again.', { id: 'session-expired' });
         navigate('/login');
       }
     };

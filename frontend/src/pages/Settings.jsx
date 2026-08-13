@@ -1,17 +1,41 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon, Bell, Shield, Volume2, Mic, Bot, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, Shield, Volume2, Bot, Save, Loader2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import { updateUserProfile } from '../services/authService';
 
 export default function Settings() {
+  const { user, updateUser } = useAuth();
+  
   const [aiPersona, setAiPersona] = useState('Strict Recruiter');
   const [speechRate, setSpeechRate] = useState('0.9x');
-  const [emailAlerts, setEmailAlerts] = useState(true);
   const [autoRecord, setAutoRecord] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveSettings = (e) => {
+  useEffect(() => {
+    if (user?.preferences) {
+      setAiPersona(user.preferences.aiPersona || 'Strict Recruiter');
+      setSpeechRate(user.preferences.speechRate || '0.9x');
+      setAutoRecord(user.preferences.autoRecord !== false);
+    }
+  }, [user]);
+
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
-    toast.success('AI studio preferences saved!');
+    setIsSaving(true);
+    try {
+      const preferences = { aiPersona, speechRate, autoRecord };
+      const res = await updateUserProfile({ preferences });
+      if (res.data) {
+        updateUser(res.data);
+        toast.success('AI studio preferences saved!');
+      }
+    } catch (err) {
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -120,10 +144,11 @@ export default function Settings() {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-btn bg-gradient-primary text-white text-xs font-semibold shadow-saas-glow hover:opacity-95 transition-all"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-btn bg-gradient-primary text-white text-xs font-semibold shadow-saas-glow hover:opacity-95 transition-all disabled:opacity-70"
           >
-            <Save className="w-4 h-4" />
-            <span>Save Preferences</span>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <span>{isSaving ? 'Saving...' : 'Save Preferences'}</span>
           </button>
         </div>
       </form>

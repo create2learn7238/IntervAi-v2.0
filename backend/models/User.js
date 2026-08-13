@@ -78,6 +78,10 @@ const userSchema = new mongoose.Schema({
     enum: ['Looking for Jobs', 'Interviewing', 'Placed', 'Not Active'],
     default: 'Looking for Jobs',
   },
+  isSuspended: {
+    type: Boolean,
+    default: false,
+  },
   resetPasswordToken: {
     type: String,
     select: false,
@@ -93,6 +97,11 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: {
     type: Date,
   },
+  preferences: {
+    aiPersona: { type: String, default: 'Strict Recruiter' },
+    speechRate: { type: String, default: '0.9x' },
+    autoRecord: { type: Boolean, default: true }
+  }
 }, { timestamps: true });
 
 // Hash password before saving

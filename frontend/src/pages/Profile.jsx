@@ -361,21 +361,23 @@ export default function Profile() {
                 </div>
 
                 {/* Placement Status Selector */}
-                <div className="mt-4 w-full pt-4 border-t border-[#F1F5F9]">
-                  <label className="block text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1.5 text-left">
-                    Placement Status
-                  </label>
-                  <select
-                    value={profile.placementStatus}
-                    onChange={(e) => setProfile({ ...profile, placementStatus: e.target.value })}
-                    className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#4F46E5]"
-                  >
-                    <option value="Looking for Jobs">🎯 Looking for Jobs</option>
-                    <option value="Interviewing">💬 Actively Interviewing</option>
-                    <option value="Placed">🎉 Placed / Hired</option>
-                    <option value="Not Active">⏸️ Not Currently Active</option>
-                  </select>
-                </div>
+                {profile.role !== 'recruiter' && profile.role !== 'admin' && (
+                  <div className="mt-4 w-full pt-4 border-t border-[#F1F5F9]">
+                    <label className="block text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1.5 text-left">
+                      Placement Status
+                    </label>
+                    <select
+                      value={profile.placementStatus}
+                      onChange={(e) => setProfile({ ...profile, placementStatus: e.target.value })}
+                      className="w-full h-10 px-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#0F172A] focus:outline-none focus:border-[#4F46E5]"
+                    >
+                      <option value="Looking for Jobs">🎯 Looking for Jobs</option>
+                      <option value="Interviewing">💬 Actively Interviewing</option>
+                      <option value="Placed">🎉 Placed / Hired</option>
+                      <option value="Not Active">⏸️ Not Currently Active</option>
+                    </select>
+                  </div>
+                )}
 
                 {/* Direct Social Links Preview */}
                 <div className="mt-4 w-full flex items-center justify-center gap-3">

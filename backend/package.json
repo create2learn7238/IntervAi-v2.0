@@ -1,5 +1,5 @@
 {
-  "name": "intervai-backend",
+  "name": "interviewai-2.0-backend",
   "version": "1.0.0",
   "description": "MERN backend for intervAi - AI Mock Interview Platform",
   "main": "server.js",

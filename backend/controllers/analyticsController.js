@@ -13,6 +13,11 @@ exports.getRecruiterAnalytics = catchAsync(async (req, res, next) => {
   });
 
 exports.getCandidateAnalytics = catchAsync(async (req, res, next) => {
-    const summary = await analyticsService.getCandidateSummary(req.user.email);
+    const summary = await analyticsService.getCandidateSummary(req.user.email, req.user._id);
+    res.status(200).json({ success: true, data: summary });
+  });
+
+exports.getPlatformAnalytics = catchAsync(async (req, res, next) => {
+    const summary = await analyticsService.getPlatformSummary();
     res.status(200).json({ success: true, data: summary });
   });

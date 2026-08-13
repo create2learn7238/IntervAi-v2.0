@@ -48,6 +48,10 @@ const interviewSchema = new mongoose.Schema({
     type: String,
     enum: ['Scheduled', 'Completed', 'Cancelled'],
     default: 'Completed',
+  },
+  sessionVideoUrl: {
+    type: String,
+    default: '',
   }
 }, { timestamps: true });
 

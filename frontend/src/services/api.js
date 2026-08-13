@@ -25,6 +25,16 @@ api.interceptors.response.use(
       localStorage.removeItem('interai_user');
       window.dispatchEvent(new Event('auth_unauthorized'));
     }
+    
+    // Handle 403 globally for suspended users
+    if (err.response?.status === 403 && err.response?.data?.error?.toLowerCase().includes('suspended')) {
+      localStorage.removeItem('intervAi_token');
+      localStorage.removeItem('intervAi_user');
+      localStorage.removeItem('interai_token');
+      localStorage.removeItem('interai_user');
+      window.dispatchEvent(new Event('auth_unauthorized'));
+    }
+    
     return Promise.reject(err);
   }
 );

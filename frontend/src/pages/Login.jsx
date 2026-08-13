@@ -33,7 +33,7 @@ export default function Login() {
     if (userObj.role === 'recruiter' || userObj.role === 'admin') {
       navigate('/dashboard/admin-analytics');
     } else {
-      navigate('/dashboard');
+      navigate('/');
     }
   };
 
@@ -42,17 +42,10 @@ export default function Login() {
     setLoading(true);
     try {
       const { data } = await loginUser({ email, password });
-      handleLoginSuccess({ _id: data._id, name: data.name, email: data.email, role: data.role || 'student' }, data.token);
+      handleLoginSuccess(data, data.token);
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Login failed. Please check credentials.';
-      const isNotFound = err.response?.status === 404 || err.response?.data?.redirectToRegister;
-
       toast.error(errorMsg);
-      if (isNotFound) {
-        setTimeout(() => {
-          navigate('/register');
-        }, 1200);
-      }
     } finally {
       setLoading(false);
     }
@@ -95,8 +88,7 @@ export default function Login() {
     setForgotLoading(true);
     try {
       const { data } = await forgotPassword({ email: forgotEmail });
-      toast.success(`Reset code sent to ${data.email}! Verification Code: ${data.resetCode}`, { duration: 7000 });
-      setResetCode(data.resetCode);
+      toast.success(data.message || 'If an account exists, a reset code was sent.', { duration: 7000 });
       setForgotStep(2);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to request password reset code');

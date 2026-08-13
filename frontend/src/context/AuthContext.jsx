@@ -11,9 +11,20 @@ export const AuthProvider = ({ children }) => {
     const stored = localStorage.getItem('intervAi_user') || localStorage.getItem('interai_user');
     if (stored && token) {
       setUser(JSON.parse(stored));
+    } else {
+      setUser(null);
     }
     setLoading(false);
   }, [token]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      setToken(null);
+    };
+    window.addEventListener('auth_unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth_unauthorized', handleUnauthorized);
+  }, []);
 
   const login = (userData, jwtToken) => {
     setUser(userData);

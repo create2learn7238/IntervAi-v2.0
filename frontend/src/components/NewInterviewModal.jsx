@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Bot, Loader2, Briefcase, FileText, Layers } from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { createInterview } from '../services/interviewService';

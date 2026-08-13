@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Webcam from 'react-webcam';
-import { Video, Webcam as WebcamIcon, Mic, CheckCircle2, ArrowRight, Lightbulb, Shield, Briefcase, Layers } from 'lucide-react';
+import { Video, Webcam as WebcamIcon, ArrowRight, Shield, Briefcase } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import NewInterviewModal from '../components/NewInterviewModal';
 import { getInterview } from '../services/interviewService';
-import { toast } from 'react-hot-toast';
 
 export default function Interview() {
   const { interviewid } = useParams();
   const [interviewdata, setInterviewdata] = useState(null);
   const [webcamEnabled, setWebcamEnabled] = useState(false);
-  const [micActive, setMicActive] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 

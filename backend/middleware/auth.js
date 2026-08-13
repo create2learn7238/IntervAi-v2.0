@@ -23,6 +23,10 @@ const protect = async (req, res, next) => {
       return next(new AppError('User not found', 401));
     }
 
+    if (req.user.isSuspended) {
+      return next(new AppError('Your account has been suspended due to policy violations.', 403));
+    }
+
     if (req.user.passwordChangedAt && decoded.iat < req.user.passwordChangedAt.getTime() / 1000) {
       return next(new AppError('User recently changed password! Please log in again.', 401));
     }

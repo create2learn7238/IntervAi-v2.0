@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast';
 import {
   Video,
   Plus,
-  ArrowRight,
   Bot,
   FileText,
   Award,
@@ -21,6 +20,7 @@ import ProgressRing from '../components/ProgressRing';
 import NewInterviewModal from '../components/NewInterviewModal';
 import { useAuth } from '../context/AuthContext';
 import { getInterviews, createInterview } from '../services/interviewService';
+import { getCandidateAnalytics } from '../services/analyticsService';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -30,8 +30,9 @@ export default function Dashboard() {
   const [fetching, setFetching] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
 
-  // Fetch Session Logs
+  // Fetch Session Logs and Analytics
   const fetchInterviews = async () => {
     if (!user?.email) {
       setFetching(false);
@@ -39,11 +40,17 @@ export default function Dashboard() {
     }
     setFetching(true);
     try {
-      const { data } = await getInterviews(user.email);
-      const fetchedData = data?.data || data;
+      const [interviewsRes, analyticsRes] = await Promise.all([
+        getInterviews(user.email),
+        getCandidateAnalytics()
+      ]);
+      const fetchedData = interviewsRes.data?.data || interviewsRes.data;
       setInterviews(Array.isArray(fetchedData) ? fetchedData : []);
+      setAnalytics(analyticsRes.data?.data || null);
     } catch (error) {
-      toast.error('Failed to sync interview session logs');
+      if (error.response?.status !== 401 && error.response?.status !== 403) {
+        toast.error('Failed to sync dashboard data', { id: 'dashboard-sync-error' });
+      }
     } finally {
       setFetching(false);
     }
@@ -51,7 +58,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchInterviews();
-  }, [user]);
+  }, [user, navigate]);
 
   // Handle Quick Form Submission
   const handleFormSubmit = async (formData) => {
@@ -83,6 +90,13 @@ export default function Dashboard() {
   };
 
   const totalSessions = interviews.length;
+  
+  // Extract Analytics Data
+  const averageScore = analytics?.averageScore || 0;
+  const totalAnswers = analytics?.totalAnswers || 0;
+  const trustScores = analytics?.trustScoreTrend || [];
+  const latestTrustScore = trustScores.length > 0 ? trustScores[trustScores.length - 1].score : 100;
+  const readinessPercent = Math.min(Math.round(averageScore * 10), 100);
 
   // Table Columns Definition with Custom Cell Renderers
   const tableColumns = [
@@ -165,7 +179,7 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-sm font-normal leading-relaxed text-slate-600">
-            Track your AI mock interviews, ATS resume compatibility, and practice metrics.
+            Track your AI mock interviews and practice metrics.
           </p>
         </div>
 
@@ -181,36 +195,36 @@ export default function Dashboard() {
       {/* Statistics Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Mock Sessions"
+          title="Total Sessions"
           value={totalSessions || '0'}
-          subtitle="Completed AI practice"
+          subtitle="Interviews generated"
           icon={Video}
           trend="up"
-          trendValue="+2 this week"
+          trendValue="Active"
         />
         <StatCard
-          title="ATS Resume Score"
-          value="86 / 100"
-          subtitle="Match to target role"
-          icon={FileText}
-          trend="up"
-          trendValue="+4 pts"
-        />
-        <StatCard
-          title="Speech Clarity"
-          value="92%"
-          subtitle="Pacing & vocal tone"
+          title="Average AI Score"
+          value={`${averageScore} / 10`}
+          subtitle="Overall performance"
           icon={Bot}
           trend="up"
-          trendValue="Optimal"
+          trendValue="Across all sessions"
         />
         <StatCard
-          title="Placement Rank"
-          value="#14 / 240"
-          subtitle="Top 10th percentile"
+          title="Trust Score"
+          value={`${latestTrustScore}%`}
+          subtitle="Anti-cheat integrity"
           icon={Award}
+          trend={latestTrustScore >= 80 ? "up" : "down"}
+          trendValue="Latest assessment"
+        />
+        <StatCard
+          title="Questions Answered"
+          value={totalAnswers || '0'}
+          subtitle="Total AI interactions"
+          icon={FileText}
           trend="up"
-          trendValue="Top Tier"
+          trendValue="Keep going!"
         />
       </div>
 
@@ -226,37 +240,21 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-semibold tracking-tight text-slate-900">
-                Readiness Score
+                Overall Readiness
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                High Confidence
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${readinessPercent >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : readinessPercent >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                {readinessPercent >= 80 ? 'High Confidence' : readinessPercent >= 50 ? 'Needs Practice' : 'Requires Review'}
               </span>
             </div>
 
             <div className="my-6 flex justify-center">
-              <ProgressRing percentage={88} size={130} strokeWidth={10} label="Readiness" />
+              <ProgressRing percentage={readinessPercent} size={130} strokeWidth={10} label="Readiness" />
             </div>
 
             <div className="space-y-3 pt-3 border-t border-slate-100">
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-600">Technical Depth</span>
-                  <span className="text-slate-900">90%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full bg-indigo-600 rounded-full" style={{ width: '90%' }} />
-                </div>
-              </div>
-
-              <div className="space-y-1 pt-1">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-600">Behavioral Tone</span>
-                  <span className="text-slate-900">85%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full bg-indigo-600 rounded-full" style={{ width: '85%' }} />
-                </div>
-              </div>
+              <p className="text-xs text-slate-500 text-center leading-relaxed">
+                This score represents your aggregate performance across all AI mock interviews. Complete more interviews to improve your readiness score.
+              </p>
             </div>
           </div>
 
@@ -305,25 +303,25 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
+          {(analytics?.recommendations || [
             {
               title: 'Structure System Design Answers',
               desc: 'Keep high-level architecture explanations under 2 minutes before diving into detailed specs.',
               tag: 'Strategy',
             },
             {
-              title: 'Optimize ATS Resume Keywords',
-              desc: 'Incorporate Redux Toolkit, Tailwind CSS, and Jest into project experience blocks.',
-              tag: 'ATS Optimization',
+              title: 'Review System Design Fundamentals',
+              desc: 'Ensure you can discuss trade-offs of microservices vs monoliths clearly.',
+              tag: 'Knowledge',
             },
             {
               title: 'Maintain Direct Camera Contact',
               desc: 'Look into the camera lens during key responses to enhance non-verbal engagement metrics.',
               tag: 'Video Studio',
             },
-          ].map((item, idx) => (
+          ]).map((item, i) => (
             <div
-              key={idx}
+              key={i}
               className="p-4 rounded-lg bg-slate-50 border border-slate-200 hover:border-indigo-300 transition-colors space-y-1.5"
             >
               <div className="flex items-center justify-between">

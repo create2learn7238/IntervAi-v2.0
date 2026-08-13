@@ -1,11 +1,10 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Zap, LayoutDashboard, LogOut, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
-  const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -35,8 +34,7 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-2">
             {[
               { label: 'Features', href: '/#features' },
-              { label: 'Pricing', href: '/pricing' },
-              { label: 'Help Center', href: '/help' },
+              { label: 'Feedback', href: '/#feedback' },
             ].map((link) => (
               <a
                 key={link.label}

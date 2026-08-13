@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
-import { BarChart3, CheckCircle2, TrendingUp, Download } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import ProgressRing from '../components/ProgressRing';
 import api from '../services/api';
@@ -10,9 +12,12 @@ export default function PerformanceAnalytics() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
 
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user, navigate]);
 
   const fetchData = async () => {
     try {

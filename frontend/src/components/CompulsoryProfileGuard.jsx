@@ -8,7 +8,8 @@ export default function CompulsoryProfileGuard({ children }) {
   const location = useLocation();
 
   // If user exists but hasn't completed their compulsory profile setup
-  if (user && !user.profileCompleted && location.pathname !== '/dashboard/profile') {
+  // Admins bypass this requirement
+  if (user && user.role !== 'admin' && !user.profileCompleted && location.pathname !== '/dashboard/profile') {
     toast.error('Compulsory Profile Setup: Please choose your User Type (Student or Recruiter) to continue.', {
       id: 'profile-guard-toast',
     });

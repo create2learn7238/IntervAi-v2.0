@@ -2,23 +2,15 @@ import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Video,
-  FileText,
   History,
   BarChart3,
-  HelpCircle,
   Settings,
-  CreditCard,
-  BookOpen,
-  UserCheck,
   ChevronLeft,
   ChevronRight,
-  Bot,
   LogOut,
   Zap,
   ShieldCheck,
   X,
-  Award,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -46,9 +38,6 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
   const mainNav = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/dashboard/interview/new', label: 'Mock Interview', icon: Video },
-    { path: '/dashboard/resume-analyzer', label: 'Resume Analyzer', icon: FileText },
-    { path: '/dashboard/ats-score', label: 'ATS Score', icon: Award },
     { path: '/dashboard/history', label: 'History', icon: History },
     { path: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   ];
@@ -61,21 +50,13 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     { path: '/dashboard/recruiter', label: 'Recruiter Dashboard', icon: ShieldCheck },
   ];
 
-  const practiceNav = [
-    { path: '/dashboard/questions', label: 'Question Bank', icon: BookOpen },
-    { path: '/dashboard/basic-practice', label: 'Behavioral Prep', icon: Bot },
-    { path: '/dashboard/dressing-posture', label: 'Dress & Posture', icon: UserCheck },
-  ];
-
   const secondaryNav = [
-    { path: '/pricing', label: 'Pricing', icon: CreditCard },
-    { path: '/help', label: 'Help Center', icon: HelpCircle },
     { path: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const closeMobile = () => {
@@ -143,9 +124,10 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         <div>
           <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200">
             <NavLink
-              to="/dashboard"
+              to="/"
               onClick={closeMobile}
               className="flex items-center gap-2.5 overflow-hidden"
+              title="Back to Home Page"
             >
               <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm shrink-0">
                 <Zap className="w-5 h-5 fill-white text-white" />
@@ -181,7 +163,6 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             {currentRole === 'admin' && renderNavGroup('Admin Portal', adminNav)}
             {currentRole === 'recruiter' && renderNavGroup('Recruiter Portal', recruiterNav)}
             {renderNavGroup('Workspace', mainNav)}
-            {renderNavGroup('Practice', practiceNav)}
             {renderNavGroup('Account', secondaryNav)}
           </div>
         </div>
@@ -189,12 +170,18 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         {/* User & Role Footer */}
         <div className="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
           {(!collapsed || mobileOpen) && (
-            <button
-              onClick={toggleRole}
-              className="w-full py-1.5 px-3 rounded-lg bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer text-center"
-            >
-              Role: {currentRole === 'admin' || currentRole === 'recruiter' ? 'Recruiter' : 'Student'} • Switch
-            </button>
+            <div className="relative overflow-hidden rounded-xl bg-white border border-slate-200/60 p-2 flex items-center gap-2.5 shadow-sm">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 blur-2xl rounded-full -mr-6 -mt-6 pointer-events-none"></div>
+              <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100/50 shrink-0 relative z-10">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex items-center gap-1.5 relative z-10">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Role:</span>
+                <span className="text-xs font-bold text-slate-700 tracking-wide capitalize">
+                  {currentRole === 'admin' ? 'Admin' : currentRole === 'recruiter' ? 'Recruiter' : 'Student'}
+                </span>
+              </div>
+            </div>
           )}
 
           {(!collapsed || mobileOpen) ? (

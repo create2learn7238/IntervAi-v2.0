@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Download, Printer, ArrowLeft, Award, CheckCircle } from 'lucide-react';
 import { getCertificate, generateCertificate } from '../services/certificateService';
@@ -7,13 +7,18 @@ import html2pdf from 'html2pdf.js';
 
 export default function CertificateView() {
   const { certId, interviewId } = useParams();
+  const navigate = useNavigate();
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
   const certRef = useRef(null);
 
   useEffect(() => {
+    if (interviewId === 'new') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     fetchOrCreateCert();
-  }, [certId, interviewId]);
+  }, [certId, interviewId, navigate]);
 
   const fetchOrCreateCert = async () => {
     try {

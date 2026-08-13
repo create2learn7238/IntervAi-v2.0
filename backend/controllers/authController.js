@@ -5,7 +5,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
 const generateAccessToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30m' });
 };
 
 const generateRefreshToken = (id) => {
@@ -20,12 +20,12 @@ const sendTokenResponse = async (user, statusCode, res) => {
   await user.save({ validateBeforeSave: false });
 
   const isProd = process.env.NODE_ENV === 'production';
-  
+
   res.cookie('token', token, {
     httpOnly: true,
     secure: isProd,
     sameSite: 'strict',
-    maxAge: 15 * 60 * 1000 // 15 mins
+    maxAge: 30 * 60 * 1000 // 30 mins
   });
 
   res.cookie('refreshToken', refreshToken, {
@@ -44,10 +44,12 @@ const sendTokenResponse = async (user, statusCode, res) => {
     branch: user.branch || '',
     graduationYear: user.graduationYear || '',
     profileCompleted: user.profileCompleted || false,
-    isRoleLocked: user.isRoleLocked || false,
+    isUserTypeLocked: user.isUserTypeLocked || false,
+    isRoleLocked: user.isUserTypeLocked || user.isRoleLocked || false,
     targetRole: user.targetRole || '',
     skills: user.skills || [],
     placementStatus: user.placementStatus || 'Looking for Jobs',
+    preferences: user.preferences || { aiPersona: 'Strict Recruiter', speechRate: '0.9x', autoRecord: true },
     token // Send token for legacy frontend support during transition
   });
 };
@@ -67,11 +69,11 @@ const register = catchAsync(async (req, res, next) => {
     return next(new AppError('User already exists with this email. Please sign in.', 400));
   }
 
-  const user = await User.create({ 
-    name: name.trim(), 
-    email: normalizedEmail, 
-    password, 
-    role: role || 'student' 
+  const user = await User.create({
+    name: name.trim(),
+    email: normalizedEmail,
+    password,
+    role: role || 'student'
   });
 
   sendTokenResponse(user, 201, res);
@@ -88,29 +90,36 @@ const login = catchAsync(async (req, res, next) => {
   const normalizedEmail = email.trim().toLowerCase();
   let user = await User.findOne({ email: normalizedEmail }).select('+password');
 
-  // Auto-seed Demo User if logging in with demo account
-  if (!user && normalizedEmail === 'demo@interai.app') {
-    user = await User.create({
-      name: 'Demo Candidate',
-      email: 'demo@interai.app',
-      password: 'password123',
-      role: 'student',
-      college: 'Demo University',
-      branch: 'Computer Science',
-      graduationYear: '2026',
-      profileCompleted: true,
-      isRoleLocked: true,
-      placementStatus: 'Looking for Jobs'
-    });
+  // Handle Demo Login: bypass password checks and auto-seed if necessary
+  if (normalizedEmail === 'demo@interai.app') {
+    if (!user) {
+      user = await User.create({
+        name: 'Demo Candidate',
+        email: 'demo@interai.app',
+        password: 'password123',
+        role: 'student',
+        college: 'Demo University',
+        branch: 'Computer Science',
+        graduationYear: '2026',
+        profileCompleted: true,
+        isRoleLocked: true,
+        placementStatus: 'Looking for Jobs'
+      });
+    } else if (user.isSuspended) {
+      // Un-suspend the demo user if it was suspended
+      user.isSuspended = false;
+      await user.save();
+    }
     return sendTokenResponse(user, 200, res);
   }
 
-  // Database Check: If user is not found in DB, prompt signup
+  // Database Check: If user is not found in DB, return error
   if (!user) {
-    return res.status(404).json({
-      error: 'Account not found in database. Please sign up to create an account.',
-      redirectToRegister: true,
-    });
+    return next(new AppError('Invalid email or password', 401));
+  }
+
+  if (user.isSuspended) {
+    return next(new AppError('Your account has been suspended due to policy violations. Please contact support.', 403));
   }
 
   const isMatch = await user.comparePassword(password);
@@ -123,7 +132,7 @@ const login = catchAsync(async (req, res, next) => {
 
 // GET /api/auth/me
 const getMe = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select('-password -refreshToken -resetPasswordToken -resetPasswordExpires -otp -otpExpires');
   res.json(user);
 });
 
@@ -141,6 +150,7 @@ const updateProfile = catchAsync(async (req, res, next) => {
     linkedIn,
     github,
     placementStatus,
+    preferences,
   } = req.body;
 
   const user = await User.findById(req.user._id);
@@ -148,63 +158,78 @@ const updateProfile = catchAsync(async (req, res, next) => {
     return next(new AppError('User not found', 404));
   }
 
-  // User Type Locking Rule: User Type (Student or Recruiter) becomes permanently locked once chosen
+  // User Type Locking Rule: User Type becomes permanently locked once chosen
   if (req.body.role !== undefined) {
     const desiredRole = req.body.role.trim();
-    if (desiredRole !== 'student' && desiredRole !== 'recruiter') {
+    if (desiredRole !== 'student' && desiredRole !== 'recruiter' && desiredRole !== 'admin') {
       return next(new AppError('Invalid role specified.', 400));
     }
-    if (user.isUserTypeLocked && desiredRole !== user.role) {
-      return next(new AppError('User Type (Student or Recruiter) is permanently set and cannot be modified after initial setup.', 400));
+
+    // Admins shouldn't be downgraded by a frontend form default
+    if (user.role === 'admin' && desiredRole !== 'admin') {
+      // Ignore role change request to protect admin status
+    } else {
+      if (user.isUserTypeLocked && desiredRole !== user.role && user.role !== 'admin') {
+        return next(new AppError('User Type is permanently set and cannot be modified.', 400));
+      }
+      user.role = desiredRole;
+      user.isUserTypeLocked = true;
     }
-    user.role = desiredRole;
-    user.isUserTypeLocked = true;
   }
 
-    if (name !== undefined) user.name = name;
-    if (college !== undefined) user.college = college;
-    if (branch !== undefined) user.branch = branch;
-    if (graduationYear !== undefined) user.graduationYear = graduationYear;
-    
-    // Job Role (targetRole) CAN BE UPDATED ANYTIME by candidate
-    if (targetRole !== undefined) {
-      user.targetRole = targetRole.trim();
+  if (name !== undefined) user.name = name;
+  if (college !== undefined) user.college = college;
+  if (branch !== undefined) user.branch = branch;
+  if (graduationYear !== undefined) user.graduationYear = graduationYear;
+
+  // Job Role (targetRole) CAN BE UPDATED ANYTIME by candidate
+  if (targetRole !== undefined) {
+    user.targetRole = targetRole.trim();
+  }
+
+  // Mark profile as completed
+  user.profileCompleted = true;
+
+  if (skills !== undefined) {
+    user.skills = Array.isArray(skills)
+      ? skills
+      : skills.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  if (bio !== undefined) user.bio = bio;
+  if (phone !== undefined) user.phone = phone;
+  if (linkedIn !== undefined) user.linkedIn = linkedIn;
+  if (github !== undefined) user.github = github;
+  if (placementStatus !== undefined) user.placementStatus = placementStatus;
+
+  if (preferences !== undefined) {
+    if (user.preferences) {
+      user.preferences = { ...user.preferences, ...preferences };
+    } else {
+      user.preferences = preferences;
     }
+  }
 
-    // Mark profile as completed
-    user.profileCompleted = true;
+  await user.save({ validateModifiedOnly: true });
 
-    if (skills !== undefined) {
-      user.skills = Array.isArray(skills)
-        ? skills
-        : skills.split(',').map((s) => s.trim()).filter(Boolean);
-    }
-    if (bio !== undefined) user.bio = bio;
-    if (phone !== undefined) user.phone = phone;
-    if (linkedIn !== undefined) user.linkedIn = linkedIn;
-    if (github !== undefined) user.github = github;
-    if (placementStatus !== undefined) user.placementStatus = placementStatus;
-
-    await user.save();
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isUserTypeLocked: user.isUserTypeLocked,
-      college: user.college,
-      branch: user.branch,
-      graduationYear: user.graduationYear,
-      targetRole: user.targetRole,
-      profileCompleted: user.profileCompleted,
-      skills: user.skills,
-      bio: user.bio,
-      phone: user.phone,
-      linkedIn: user.linkedIn,
-      github: user.github,
-      placementStatus: user.placementStatus,
-    });
+  res.json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isUserTypeLocked: user.isUserTypeLocked,
+    college: user.college,
+    branch: user.branch,
+    graduationYear: user.graduationYear,
+    targetRole: user.targetRole,
+    profileCompleted: user.profileCompleted,
+    skills: user.skills,
+    bio: user.bio,
+    phone: user.phone,
+    linkedIn: user.linkedIn,
+    github: user.github,
+    placementStatus: user.placementStatus,
+    preferences: user.preferences,
+  });
 });
 
 // POST /api/auth/verify-role
@@ -217,8 +242,8 @@ const verifyRole = async (req, res) => {
 
     const currentSkills = Array.isArray(skills) ? skills : [];
     const prompt = `Act as a Technical Hiring Lead & Placement Officer. Analyze this candidate's target job role and skill stack:
-Target Role: "${targetRole.trim()}"
-Current Skills: ${currentSkills.length > 0 ? currentSkills.join(', ') : 'None listed'}
+Target Role: <target_role>${targetRole.trim()}</target_role>
+Current Skills: <skills>${currentSkills.length > 0 ? currentSkills.join(', ') : 'None listed'}</skills>
 
 Evaluate if this job role exists, its market validity, standard terminology, and missing required skills.
 Return ONLY a raw JSON object (no markdown, no backticks, no explanatory text) with this exact schema:
@@ -308,26 +333,32 @@ const forgotPassword = async (req, res) => {
     }
 
     const user = await User.findOne({ email: email.trim().toLowerCase() });
+    
+    // Always return success to prevent account enumeration
     if (!user) {
-      return res.status(404).json({ error: 'No account found with this email address' });
+      return res.json({
+        message: 'If an account with that email exists, we have sent a password reset OTP.'
+      });
     }
 
     const crypto = require('crypto');
-    // Generate 6-digit OTP reset code and 15-min expiration
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const { sendPasswordResetOTP } = require('../services/emailService');
+
+    // Generate 6-digit OTP reset code securely
+    const resetCode = crypto.randomInt(100000, 1000000).toString();
     const hashedOTP = crypto.createHash('sha256').update(resetCode).digest('hex');
     user.resetPasswordToken = hashedOTP;
     user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
     await user.save();
 
-    // TODO: Send resetCode via Email Service here
+    await sendPasswordResetOTP(user.email, resetCode);
 
     res.json({
-      message: 'Password reset OTP sent successfully'
+      message: 'If an account with that email exists, we have sent a password reset OTP.'
     });
   } catch (error) {
     console.error('Forgot password error:', error);
-    res.status(500).json({ error: 'Server error generating password reset code' });
+    res.status(500).json({ error: 'Server error processing password reset' });
   }
 };
 
@@ -378,7 +409,7 @@ const refresh = catchAsync(async (req, res, next) => {
 
   const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
   const user = await User.findOne({ _id: decoded.id, refreshToken }).select('-password');
-  
+
   if (!user) return next(new AppError('Invalid refresh token', 401));
 
   sendTokenResponse(user, 200, res);

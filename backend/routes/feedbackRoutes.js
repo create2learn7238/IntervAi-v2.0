@@ -17,8 +17,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+const rateLimit = require('express-rate-limit');
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many AI requests from this IP, please try again after 15 minutes.' }
+});
+
 router.use(protect);
 router.get('/:mockid', getFeedback);
-router.post('/:mockid', upload.single('video'), saveAnswer);
+router.post('/:mockid', aiLimiter, upload.single('video'), saveAnswer);
 
 module.exports = router;

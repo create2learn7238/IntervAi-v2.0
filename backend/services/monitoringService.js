@@ -9,6 +9,7 @@ const PENALTY_MAP = {
   CAMERA_OFF: 15,
   MIC_OFF: 10,
   BROWSER_RESIZE: 10,
+  TRIVIAL_ANSWER: 10,
   UNKNOWN: 0,
 };
 
@@ -19,8 +20,11 @@ const SEVERITY_MAP = {
   CAMERA_OFF: 'High',
   MIC_OFF: 'High',
   BROWSER_RESIZE: 'Low',
+  TRIVIAL_ANSWER: 'Medium',
   UNKNOWN: 'Low',
 };
+
+const User = require('../models/User');
 
 exports.initializeTrustScore = async (interviewId, userEmail) => {
   let score = await TrustScore.findOne({ interviewId });
@@ -76,6 +80,14 @@ exports.logViolation = async (interviewId, userEmail, violationType, description
     trustScoreBefore: scoreBefore,
     trustScoreAfter: trustScore.score,
   });
+
+  // Auto-suspend user if global trust score drops below threshold
+  if (trustScore.score < 30 && userEmail) {
+    await User.findOneAndUpdate(
+      { email: userEmail },
+      { $set: { isSuspended: true } }
+    );
+  }
 
   return { violation, trustScore };
 };
