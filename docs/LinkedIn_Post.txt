@@ -31,7 +31,11 @@ React 19 | Vite | TailwindCSS | Node.js | Express | MongoDB Atlas | Google Gemin
 Git Commit History:
 "added feature" -> "broke feature" -> "why did Gemini roast me" -> "hotfix_v2_FINAL" -> "deployed, do not touch 🙏"
 
-Shoutout to the team: @Friend1 (Backend Menace) & @Friend2 (MacBook Frontend Legend) 🫡
+---
+
+👥 2-MEMBER POWERHOUSE TEAM:
+
+Shoutout to my teammate @TeammateName — co-built this entire 2-person platform from scratch! 🫡
 
 Drop a like & share with anyone preparing for campus placement drives! 🙌
 
